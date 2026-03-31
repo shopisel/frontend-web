@@ -3,11 +3,12 @@ import { Lock, ShieldCheck, ShoppingCart } from "lucide-react";
 
 interface AuthScreenProps {
   onLogin: () => void;
+  onRegister: () => void;
   loading: boolean;
   configError?: string | null;
 }
 
-export function AuthScreen({ onLogin, loading, configError }: AuthScreenProps) {
+export function AuthScreen({ onLogin, onRegister, loading, configError }: AuthScreenProps) {
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-indigo-50 to-white overflow-hidden">
       <div className="flex flex-col items-center pt-16 pb-8 px-6">
@@ -77,6 +78,16 @@ export function AuthScreen({ onLogin, loading, configError }: AuthScreenProps) {
               Continuar com Keycloak
             </span>
           )}
+        </motion.button>
+        <motion.button
+          onClick={onRegister}
+          disabled={loading || Boolean(configError)}
+          whileTap={{ scale: 0.97 }}
+          className="w-full py-4 rounded-2xl flex items-center justify-center gap-2 border border-indigo-200 bg-white disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          <span className="text-indigo-700" style={{ fontSize: 16, fontWeight: 600 }}>
+            Criar conta
+          </span>
         </motion.button>
       </div>
     </div>

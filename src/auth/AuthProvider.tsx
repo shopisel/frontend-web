@@ -23,6 +23,7 @@ type AuthContextValue = {
   user: AuthUser | null;
   configError: string | null;
   login: () => Promise<void>;
+  register: () => Promise<void>;
   logout: () => Promise<void>;
   getAccessToken: () => Promise<string | null>;
 };
@@ -156,6 +157,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     });
   }, []);
 
+  const register = useCallback(async () => {
+    if (!keycloak) return;
+    await keycloak.login({
+      action: "register",
+      redirectUri: `${window.location.origin}/`,
+    });
+  }, []);
+
   const getAccessToken = useCallback(async (): Promise<string | null> => {
     if (!keycloak || !keycloak.authenticated) return null;
     try {
@@ -175,10 +184,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       user,
       configError,
       login,
+      register,
       logout,
       getAccessToken,
     }),
-    [initialized, isAuthenticated, token, user, configError, login, logout, getAccessToken]
+    [initialized, isAuthenticated, token, user, configError, login, register, logout, getAccessToken]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

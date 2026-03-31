@@ -27,7 +27,7 @@ const tabVariants = {
 };
 
 export default function App() {
-  const { initialized, isAuthenticated, login, logout, configError, user } = useAuth();
+  const { initialized, isAuthenticated, login, register, logout, configError, user } = useAuth();
   const [flow, setFlow] = useState<AppFlow>("splash");
   const [activeTab, setActiveTab] = useState<AppTab>("home");
   const [authLoading, setAuthLoading] = useState(false);
@@ -85,6 +85,15 @@ export default function App() {
       setActiveTab("home");
     }
   }, [logout]);
+
+  const handleKeycloakRegister = useCallback(async () => {
+    setAuthLoading(true);
+    try {
+      await register();
+    } finally {
+      setAuthLoading(false);
+    }
+  }, [register]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-indigo-50 flex items-center justify-center p-4">
@@ -172,6 +181,9 @@ export default function App() {
                 <AuthScreen
                   onLogin={() => {
                     void handleKeycloakLogin();
+                  }}
+                  onRegister={() => {
+                    void handleKeycloakRegister();
                   }}
                   loading={authLoading}
                   configError={configError}
