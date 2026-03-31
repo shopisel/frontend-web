@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { SplashScreen } from "./components/screens/SplashScreen";
 import { OnboardingScreen } from "./components/screens/OnboardingScreen";
@@ -10,6 +10,7 @@ import { PricesScreen } from "./components/screens/PricesScreen";
 import { AlertsScreen } from "./components/screens/AlertsScreen";
 import { ProfileScreen } from "./components/screens/ProfileScreen";
 import { BottomNav, AppTab } from "./components/layout/BottomNav";
+import { useAuth } from "../auth/AuthProvider";
 
 type AppFlow = "splash" | "onboarding" | "auth" | "app";
 
@@ -26,8 +27,22 @@ const tabVariants = {
 };
 
 export default function App() {
+  const { initialized, isAuthenticated, login, logout, configError, user } = useAuth();
   const [flow, setFlow] = useState<AppFlow>("splash");
   const [activeTab, setActiveTab] = useState<AppTab>("home");
+  const [authLoading, setAuthLoading] = useState(false);
+
+  useEffect(() => {
+    if (!initialized) return;
+    if (isAuthenticated) {
+      setFlow("app");
+      return;
+    }
+    if (flow === "app") {
+      setFlow("auth");
+      setActiveTab("home");
+    }
+  }, [initialized, isAuthenticated, flow]);
 
   const handleTabChange = useCallback((tab: AppTab) => {
     setActiveTab(tab);
@@ -36,6 +51,40 @@ export default function App() {
   const handleNavigate = useCallback((tab: string) => {
     setActiveTab(tab as AppTab);
   }, []);
+
+  const handleSplashComplete = useCallback(() => {
+    if (isAuthenticated) {
+      setFlow("app");
+      return;
+    }
+    setFlow("onboarding");
+  }, [isAuthenticated]);
+
+  const handleOnboardingComplete = useCallback(() => {
+    if (isAuthenticated) {
+      setFlow("app");
+      return;
+    }
+    setFlow("auth");
+  }, [isAuthenticated]);
+
+  const handleKeycloakLogin = useCallback(async () => {
+    setAuthLoading(true);
+    try {
+      await login();
+    } finally {
+      setAuthLoading(false);
+    }
+  }, [login]);
+
+  const handleKeycloakLogout = useCallback(async () => {
+    try {
+      await logout();
+    } finally {
+      setFlow("auth");
+      setActiveTab("home");
+    }
+  }, [logout]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-indigo-50 flex items-center justify-center p-4">
@@ -98,7 +147,7 @@ export default function App() {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.4 }}
               >
-                <SplashScreen onComplete={() => setFlow("onboarding")} />
+                <SplashScreen onComplete={handleSplashComplete} />
               </motion.div>
             )}
 
@@ -109,7 +158,7 @@ export default function App() {
                 {...screenVariants}
                 transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
               >
-                <OnboardingScreen onComplete={() => setFlow("auth")} />
+                <OnboardingScreen onComplete={handleOnboardingComplete} />
               </motion.div>
             )}
 
@@ -120,7 +169,13 @@ export default function App() {
                 {...screenVariants}
                 transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
               >
-                <AuthScreen onComplete={() => setFlow("app")} />
+                <AuthScreen
+                  onLogin={() => {
+                    void handleKeycloakLogin();
+                  }}
+                  loading={authLoading}
+                  configError={configError}
+                />
               </motion.div>
             )}
 
@@ -162,7 +217,12 @@ export default function App() {
                     )}
                     {activeTab === "profile" && (
                       <motion.div key="profile" className="absolute inset-0" {...tabVariants} transition={{ duration: 0.25 }}>
-                        <ProfileScreen onLogout={() => setFlow("splash")} />
+                        <ProfileScreen
+                          onLogout={() => {
+                            void handleKeycloakLogout();
+                          }}
+                          user={user}
+                        />
                       </motion.div>
                     )}
                   </AnimatePresence>

@@ -6,9 +6,9 @@ import {
 } from "lucide-react";
 
 const listItems = [
-  { id: 1, name: "Organic Apples", qty: "1 kg", price: "$2.49", store: "FreshMart", checked: false, color: "#ECFDF5", icon: "🍎" },
-  { id: 2, name: "Whole Milk 2L", qty: "2 pcs", price: "$3.20", store: "CostPlus", checked: true, color: "#EFF6FF", icon: "🥛" },
-  { id: 3, name: "Sourdough Bread", qty: "1 loaf", price: "$4.50", store: "BakeryHub", checked: false, color: "#FFF7ED", icon: "🍞" },
+  { id: 1, name: "Organic Apples", qty: "1 kg", price: "$2.49", store: "FreshMart", checked: false, color: "#ECFDF5", emoji: "🍎" },
+  { id: 2, name: "Whole Milk 2L", qty: "2 pcs", price: "$3.20", store: "CostPlus", checked: true, color: "#EFF6FF", emoji: "🥛" },
+  { id: 3, name: "Sourdough Bread", qty: "1 loaf", price: "$4.50", store: "BakeryHub", checked: false, color: "#FFF7ED", emoji: "🍞" },
 ];
 
 const deals = [
@@ -264,3 +264,4 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
     </div>
   );
 }
+

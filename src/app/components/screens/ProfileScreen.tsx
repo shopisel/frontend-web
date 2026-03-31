@@ -7,6 +7,11 @@ import {
 
 interface ProfileScreenProps {
   onLogout: () => void;
+  user?: {
+    name?: string;
+    email?: string;
+    username?: string;
+  } | null;
 }
 
 function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
@@ -32,7 +37,7 @@ const preferredStores = [
   { name: "BioShop", distance: "1.8 mi", active: false },
 ];
 
-export function ProfileScreen({ onLogout }: ProfileScreenProps) {
+export function ProfileScreen({ onLogout, user }: ProfileScreenProps) {
   const [darkMode, setDarkMode] = useState(false);
   const [priceAlerts, setPriceAlerts] = useState(true);
   const [dealNotifs, setDealNotifs] = useState(true);
@@ -44,6 +49,15 @@ export function ProfileScreen({ onLogout }: ProfileScreenProps) {
     setStores(prev => prev.map((s, i) => i === idx ? { ...s, active: !s.active } : s));
   };
 
+  const displayName = user?.name || user?.username || "Utilizador";
+  const displayEmail = user?.email || "Sem email";
+  const initials = displayName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((chunk) => chunk[0]?.toUpperCase() ?? "")
+    .join("");
+
   return (
     <div className="flex flex-col h-full bg-[#F8F9FC] overflow-y-auto">
       {/* Header */}
@@ -53,11 +67,11 @@ export function ProfileScreen({ onLogout }: ProfileScreenProps) {
         {/* User card */}
         <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-indigo-600 to-violet-600 rounded-3xl">
           <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center">
-            <span className="text-white" style={{ fontSize: 24, fontWeight: 700 }}>AJ</span>
+            <span className="text-white" style={{ fontSize: 24, fontWeight: 700 }}>{initials || "U"}</span>
           </div>
           <div className="flex-1">
-            <p className="text-white" style={{ fontSize: 18, fontWeight: 700 }}>Alex Johnson</p>
-            <p className="text-indigo-200" style={{ fontSize: 13 }}>alex.johnson@email.com</p>
+            <p className="text-white" style={{ fontSize: 18, fontWeight: 700 }}>{displayName}</p>
+            <p className="text-indigo-200" style={{ fontSize: 13 }}>{displayEmail}</p>
             <div className="flex items-center gap-1 mt-1">
               <Star className="w-3 h-3 text-yellow-300" fill="#FCD34D" />
               <span className="text-white/80" style={{ fontSize: 12 }}>Premium Member</span>
