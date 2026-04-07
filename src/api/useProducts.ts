@@ -13,6 +13,7 @@ export interface Product {
   name: string;
   barcode: string;
   categoryId: string;
+  image?: string;
   emoji?: string;
 }
 
@@ -23,8 +24,12 @@ export function useProducts() {
     return await get(`/products?name=${encodeURIComponent(query)}`);
   }, [get]);
 
-  const getCategories = useCallback(async (): Promise<Category[]> => {
-    return await get("/categories");
+  const getMainCategories = useCallback(async (): Promise<Category[]> => {
+    return await get("/categories/main");
+  }, [get]);
+
+  const getSubCategories = useCallback(async (categoryId: string): Promise<Category[]> => {
+    return await get(`/categories/${categoryId}/subcategories`);
   }, [get]);
 
   const getProductsByCategory = useCallback(async (categoryId: string): Promise<Product[]> => {
@@ -36,5 +41,5 @@ export function useProducts() {
     return await get(`/products?ids=${encodeURIComponent(ids.join(","))}`);
   }, [get]);
 
-  return { searchProducts, getCategories, getProductsByCategory, getProductsByIds };
+  return { searchProducts, getMainCategories, getSubCategories, getProductsByCategory, getProductsByIds };
 }

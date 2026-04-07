@@ -4,8 +4,37 @@ import { X, Type, Scan, Grid3x3, Search, ChevronLeft, ChevronRight, Loader, Stor
 import { useProducts, Product, Category } from "../../../api/useProducts";
 import { useStores, StoreResponse } from "../../../api/useStores";
 import { usePrices, PriceResponse } from "../../../api/usePrices";
+import { ImageWithFallback } from "../fallback/ImageWithFallback";
 
 type InputMethod = "text" | "barcode" | "category";
+
+const categoryImageModules = import.meta.glob("../../../../image/*.png", {
+  eager: true,
+  import: "default",
+}) as Record<string, string>;
+
+const normalizeImageName = (value: string) => {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, "e")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+};
+
+const categoryImageByName = Object.entries(categoryImageModules).reduce<Record<string, string>>(
+  (acc, [path, url]) => {
+    const fileName = path.split(/[/\\]/).pop() ?? "";
+    const baseName = fileName.replace(/\.[^/.]+$/, "");
+    if (baseName) {
+      acc[normalizeImageName(baseName)] = url;
+    }
+    return acc;
+  },
+  {},
+);
 
 interface AddProductModalProps {
   isOpen: boolean;
@@ -14,7 +43,7 @@ interface AddProductModalProps {
 }
 
 export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalProps) {
-  const { searchProducts, getCategories, getProductsByCategory } = useProducts();
+  const { searchProducts, getMainCategories, getSubCategories, getProductsByCategory } = useProducts();
   const { getStores } = useStores();
   const { getPrices } = usePrices();
 
@@ -23,12 +52,14 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
   const [isScanning, setIsScanning] = useState(false);
   
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [selectedSubCategory, setSelectedSubCategory] = useState<Category | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   
   const [addedCount, setAddedCount] = useState(0);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subCategories, setSubCategories] = useState<Category[]>([]);
   
   const [storeSearch, setStoreSearch] = useState("");
   const [allStores, setAllStores] = useState<StoreResponse[]>([]);
@@ -36,6 +67,24 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
   
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingStore, setIsLoadingStore] = useState(false);
+
+  const getCategoryImageSrc = (category: Category) => {
+    const imageValue = category.image?.trim();
+    if (imageValue && /^(https?:|data:|blob:|\/)/i.test(imageValue)) {
+      return imageValue;
+    }
+    const rawName = imageValue || category.name;
+    if (!rawName) return undefined;
+    const normalized = normalizeImageName(rawName.replace(/\.[^/.]+$/, ""));
+    return categoryImageByName[normalized];
+  };
+
+  const getProductImageSrc = (product: Product) => {
+    const imageValue = product.image?.trim();
+    if (!imageValue) return undefined;
+    if (/^(https?:|data:|blob:|\/)/i.test(imageValue)) return imageValue;
+    return undefined;
+  };
 
   useEffect(() => {
     if (method === "category" && categories.length === 0) {
@@ -46,7 +95,7 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
   const loadCategories = async () => {
     setIsLoading(true);
     try {
-      const data = await getCategories();
+      const data = await getMainCategories();
       setCategories(data || []);
     } catch(e) {
       console.error(e);
@@ -79,10 +128,35 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
 
   useEffect(() => {
     if (selectedCategory) {
-      const fetchCatProducts = async () => {
+      const fetchSubCats = async () => {
         setIsLoading(true);
         try {
-          const data = await getProductsByCategory(selectedCategory.id);
+          const data = await getSubCategories(selectedCategory.id);
+          setSubCategories(data || []);
+        } catch(e) {
+           console.error(e);
+        } finally {
+           setIsLoading(false);
+        }
+      };
+      setSelectedSubCategory(null);
+      setSubCategories([]);
+      setProducts([]);
+      fetchSubCats();
+    } else {
+      if (method === "category") {
+        setSubCategories([]);
+        setProducts([]);
+      }
+    }
+  }, [selectedCategory, getSubCategories, method]);
+
+  useEffect(() => {
+    if (selectedSubCategory) {
+      const fetchSubCatProducts = async () => {
+        setIsLoading(true);
+        try {
+          const data = await getProductsByCategory(selectedSubCategory.id);
           setProducts(data || []);
         } catch(e) {
            console.error(e);
@@ -90,11 +164,11 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
            setIsLoading(false);
         }
       };
-      fetchCatProducts();
-    } else {
-      if (method === "category") setProducts([]);
+      fetchSubCatProducts();
+    } else if (selectedCategory && method === "category") {
+      setProducts([]);
     }
-  }, [selectedCategory, getProductsByCategory, method]);
+  }, [selectedSubCategory, getProductsByCategory, method, selectedCategory]);
 
   useEffect(() => {
     if (selectedProduct) {
@@ -145,9 +219,11 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
     setSearchInput("");
     setIsScanning(false);
     setSelectedCategory(null);
+    setSelectedSubCategory(null);
     setSelectedProduct(null);
     setAddedCount(0);
     setProducts([]);
+    setSubCategories([]);
   };
 
   const handleClose = () => {
@@ -208,10 +284,11 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
       >
         <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100 flex-shrink-0">
           <div className="flex items-center gap-3">
-            {(selectedCategory || selectedProduct) && (
+            {(selectedCategory || selectedSubCategory || selectedProduct) && (
               <button
                 onClick={() => {
                   if (selectedProduct) setSelectedProduct(null);
+                  else if (selectedSubCategory) setSelectedSubCategory(null);
                   else if (selectedCategory) setSelectedCategory(null);
                 }}
                 className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
@@ -221,7 +298,13 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
             )}
             <div>
               <h2 className="text-gray-900" style={{ fontSize: 18, fontWeight: 700 }}>
-                {selectedProduct ? "Escolher Loja" : selectedCategory ? selectedCategory.name : "Add Product"}
+                {selectedProduct
+                  ? "Escolher Loja"
+                  : selectedSubCategory
+                    ? selectedSubCategory.name
+                    : selectedCategory
+                      ? selectedCategory.name
+                      : "Add Product"}
               </h2>
               {addedCount > 0 && !selectedProduct && (
                 <p className="text-green-600" style={{ fontSize: 12, fontWeight: 600 }}>
@@ -244,7 +327,15 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center text-3xl shadow-sm">
-                    {selectedProduct.emoji || "📦"}
+                    {getProductImageSrc(selectedProduct) ? (
+                      <ImageWithFallback
+                        src={getProductImageSrc(selectedProduct)}
+                        alt={selectedProduct.name}
+                        className="w-16 h-16 object-cover rounded-2xl"
+                      />
+                    ) : (
+                      selectedProduct.emoji || "📦"
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-gray-900 font-bold text-lg truncate">{selectedProduct.name}</h3>
@@ -369,7 +460,15 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                             whileTap={{ scale: 0.98 }}
                           >
                             <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-lg shadow-sm">
-                              {product.emoji || "📦"}
+                              {getProductImageSrc(product) ? (
+                                <ImageWithFallback
+                                  src={getProductImageSrc(product)}
+                                  alt={product.name}
+                                  className="w-10 h-10 object-cover rounded-lg"
+                                />
+                              ) : (
+                                product.emoji || "📦"
+                              )}
                             </div>
                             <div className="flex-1 text-left">
                               <p className="text-gray-900" style={{ fontSize: 14, fontWeight: 600 }}>{product.name}</p>
@@ -391,27 +490,73 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                         <div className="flex justify-center py-4"><Loader className="w-6 h-6 animate-spin text-green-400" /></div>
                     ) : (
                       <div className="grid grid-cols-3 gap-2">
-                        {categories.map((cat) => (
-                          <button
-                            key={cat.id}
-                            onClick={() => setSelectedCategory(cat)}
-                            className="flex flex-col items-center gap-2 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
-                          >
-                            {cat.image ? (
-                              <img src={cat.image} className="w-12 h-12 object-cover rounded-lg bg-white shadow-sm" />
-                            ) : (
-                              <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center shadow-sm">📦</div>
-                            )}
-                            <p className="text-gray-900 text-center line-clamp-1" style={{ fontSize: 12, fontWeight: 600 }}>{cat.name}</p>
-                          </button>
-                        ))}
+                        {categories.map((cat) => {
+                          const imageSrc = getCategoryImageSrc(cat);
+                          return (
+                            <button
+                              key={cat.id}
+                              onClick={() => {
+                                setSelectedCategory(cat);
+                                setSelectedSubCategory(null);
+                                setSubCategories([]);
+                                setProducts([]);
+                              }}
+                              className="flex flex-col items-center gap-2 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                            >
+                              {imageSrc ? (
+                                <img
+                                  src={imageSrc}
+                                  alt={cat.name}
+                                  className="w-12 h-12 object-cover rounded-lg bg-white shadow-sm"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center shadow-sm">📦</div>
+                              )}
+                              <p className="text-gray-900 text-center line-clamp-1" style={{ fontSize: 12, fontWeight: 600 }}>{cat.name}</p>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </motion.div>
                 )}
 
-                {selectedCategory && (
-                  <motion.div key={`category-${selectedCategory.id}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                {method === "category" && selectedCategory && !selectedSubCategory && (
+                  <motion.div key={`subcategory-${selectedCategory.id}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                    {isLoading ? (
+                      <div className="flex justify-center py-4"><Loader className="w-6 h-6 animate-spin text-green-400" /></div>
+                    ) : subCategories.length > 0 ? (
+                      <div className="grid grid-cols-3 gap-2">
+                        {subCategories.map((subCat) => {
+                          const imageSrc = getCategoryImageSrc(subCat);
+                          return (
+                            <button
+                              key={subCat.id}
+                              onClick={() => setSelectedSubCategory(subCat)}
+                              className="flex flex-col items-center gap-2 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                            >
+                              {imageSrc ? (
+                                <img
+                                  src={imageSrc}
+                                  alt={subCat.name}
+                                  className="w-12 h-12 object-cover rounded-lg bg-white shadow-sm"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center shadow-sm">📦</div>
+                              )}
+                              <p className="text-gray-900 text-center line-clamp-1" style={{ fontSize: 12, fontWeight: 600 }}>{subCat.name}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-center text-gray-400 py-4" style={{fontSize: 13}}>Sem subcategorias.</p>
+                    )}
+                  </motion.div>
+                )}
+
+                {selectedSubCategory && (
+                  <motion.div key={`subcategory-products-${selectedSubCategory.id}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                     <div className="space-y-2">
                       {isLoading ? (
                          <div className="flex justify-center py-4"><Loader className="w-6 h-6 animate-spin text-green-400" /></div>
@@ -423,7 +568,15 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                           whileTap={{ scale: 0.98 }}
                         >
                           <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-lg shadow-sm">
-                            {product.emoji || "📦"}
+                            {getProductImageSrc(product) ? (
+                              <ImageWithFallback
+                                src={getProductImageSrc(product)}
+                                alt={product.name}
+                                className="w-10 h-10 object-cover rounded-lg"
+                              />
+                            ) : (
+                              product.emoji || "📦"
+                            )}
                           </div>
                           <div className="flex-1 text-left">
                             <p className="text-gray-900" style={{ fontSize: 14, fontWeight: 600 }}>{product.name}</p>
