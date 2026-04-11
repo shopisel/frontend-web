@@ -173,7 +173,7 @@ export function ListsScreen({ onNavigate }: { onNavigate?: (tab: string) => void
   if (view === "lists") {
     return (
       <div className="flex flex-col h-full bg-[#F8F9FC]">
-        <div className="px-5 pt-12 pb-4 bg-white flex justify-between items-center">
+        <div className="px-5 pt-6 pb-4 bg-white flex justify-between items-center">
           <div>
             <h1 className="text-gray-900 mb-1" style={{ fontSize: 24, fontWeight: 700 }}>Minhas Listas</h1>
             <p className="text-gray-400" style={{ fontSize: 14 }}>Gere as tuas compras</p>
@@ -242,7 +242,7 @@ export function ListsScreen({ onNavigate }: { onNavigate?: (tab: string) => void
 
   return (
     <div className="flex flex-col h-full bg-[#F8F9FC]">
-      <div className="px-5 pt-12 pb-4 bg-white shadow-sm z-10 relative">
+      <div className="px-5 pt-6 pb-4 bg-white shadow-sm z-10 relative">
         <div className="flex items-center gap-3 mb-3">
           <button
             onClick={() => setView("lists")}
@@ -375,7 +375,7 @@ export function ListsScreen({ onNavigate }: { onNavigate?: (tab: string) => void
         )}
       </div>
 
-      <div className="absolute bottom-24 right-5">
+      <div className="absolute bottom-6 right-6">
         <motion.button
           whileTap={{ scale: 0.92 }}
           onClick={() => setShowAddModal(true)}

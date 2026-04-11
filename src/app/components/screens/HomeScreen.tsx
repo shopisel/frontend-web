@@ -41,7 +41,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
   return (
     <div className="flex flex-col h-full bg-[#F8F9FC] overflow-hidden">
       {/* Header */}
-      <div className="px-5 pt-12 pb-5 bg-white">
+      <div className="px-5 pt-6 pb-5 bg-white">
         <div className="flex items-center justify-between mb-4">
           <div>
             <p className="text-gray-400" style={{ fontSize: 13 }}>Good morning 👋</p>
