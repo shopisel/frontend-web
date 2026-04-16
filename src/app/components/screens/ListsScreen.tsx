@@ -62,82 +62,97 @@ export function ListsScreen({ onNavigate }: { onNavigate?: (tab: string) => void
   // ...existing code...
   return (
     <div className="flex flex-col h-full bg-[#F8F9FC]">
-      <div className="px-5 pt-6 pb-4 bg-white flex justify-between items-center">
-        <div>
-          <h1 className="text-gray-900 mb-1" style={{ fontSize: 24, fontWeight: 700 }}>Minhas Listas</h1>
-          <p className="text-gray-400" style={{ fontSize: 14 }}>Gere as tuas compras</p>
+      <div className="bg-white">
+        <div className="max-w-6xl mx-auto w-full px-5 lg:px-8 pt-6 pb-4 flex justify-between items-center">
+          <div>
+            <h1 className="text-gray-900 mb-1" style={{ fontSize: 24, fontWeight: 700 }}>
+              Minhas Listas
+            </h1>
+            <p className="text-gray-400" style={{ fontSize: 14 }}>
+              Gere as tuas compras
+            </p>
+          </div>
+          <button onClick={loadLists} className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center">
+            <RefreshCw className={`w-5 h-5 text-gray-500 ${isLoading ? "animate-spin" : ""}`} />
+          </button>
         </div>
-        <button onClick={loadLists} className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center">
-           <RefreshCw className={`w-5 h-5 text-gray-500 ${isLoading ? "animate-spin" : ""}`} />
-        </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 py-4">
-        {isLoading && lists.length === 0 ? (
-          <div className="bg-white rounded-3xl p-5" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
-            <p className="text-gray-500" style={{ fontSize: 14 }}>A carregar listas...</p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3 mb-6">
-            {lists.map((list, i) => {
-               return (
-                <motion.div
-                  key={list.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.08 }}
-                  className="bg-white rounded-3xl p-5 cursor-pointer"
-                  style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => navigate(`/lists/${list.id}`)}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#EEF2FF]">
-                        <ShoppingCart className="w-5 h-5 text-[#6366F1]" />
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-6xl mx-auto w-full px-5 lg:px-8 py-5">
+          {isLoading && lists.length === 0 ? (
+            <div className="bg-white rounded-3xl p-5" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
+              <p className="text-gray-500" style={{ fontSize: 14 }}>
+                A carregar listas...
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 mb-6">
+              {lists.map((list, i) => {
+                return (
+                  <motion.div
+                    key={list.id}
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.04 }}
+                    className="bg-white rounded-3xl p-5 cursor-pointer"
+                    style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}
+                    whileTap={{ scale: 0.985 }}
+                    onClick={() => navigate(`/lists/${list.id}`)}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#EEF2FF]">
+                          <ShoppingCart className="w-5 h-5 text-[#6366F1]" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-gray-900 truncate" style={{ fontSize: 15, fontWeight: 700 }}>
+                            {list.name}
+                          </p>
+                          <p className="text-gray-400" style={{ fontSize: 12 }}>
+                            {list.items?.length || 0} items
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-gray-900" style={{ fontSize: 15, fontWeight: 700 }}>{list.name}</p>
-                        <p className="text-gray-400" style={{ fontSize: 12 }}>{list.items?.length || 0} items</p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteConfirm(list.id);
+                          }}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </button>
+                        <ChevronRight className="w-5 h-5 text-gray-300 mt-1" />
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteConfirm(list.id);
-                        }}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </button>
-                      <ChevronRight className="w-5 h-5 text-gray-300 mt-1" />
-                    </div>
-                  </div>
-                </motion.div>
-               );
-            })}
+                  </motion.div>
+                );
+              })}
 
-            {!lists.length && (
-               <div className="bg-white rounded-3xl p-5" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
-                <p className="text-gray-500" style={{ fontSize: 14 }}>Ainda nao tens listas.</p>
-               </div>
-            )}
-          </div>
-        )}
+              {!lists.length && (
+                <div className="bg-white rounded-3xl p-5" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
+                  <p className="text-gray-500" style={{ fontSize: 14 }}>
+                    Ainda nao tens listas.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
-        <motion.button
-          onClick={handleCreateList}
-          whileTap={{ scale: 0.97 }}
-          className="w-full py-4 rounded-3xl border-2 border-dashed border-gray-200 flex items-center justify-center gap-2"
-        >
-          <Plus className="w-5 h-5 text-gray-400" />
-          <span className="text-gray-400" style={{ fontSize: 14, fontWeight: 600 }}>Create New List</span>
-        </motion.button>
+          <motion.button
+            onClick={handleCreateList}
+            whileTap={{ scale: 0.98 }}
+            className="w-full py-4 rounded-3xl border-2 border-dashed border-gray-200 flex items-center justify-center gap-2 bg-white"
+          >
+            <Plus className="w-5 h-5 text-gray-400" />
+            <span className="text-gray-400" style={{ fontSize: 14, fontWeight: 600 }}>
+              Create New List
+            </span>
+          </motion.button>
+        </div>
       </div>
-
-      // ...existing code...
-      // ...existing code...
       {deleteConfirm && (
         <motion.div
           initial={{ opacity: 0 }}

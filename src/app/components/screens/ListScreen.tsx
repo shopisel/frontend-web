@@ -236,7 +236,8 @@ const handleAddItem = async (addedItem: any) => {
 
   return (
     <div className="flex flex-col h-full bg-[#F8F9FC]">
-      <div className="px-5 pt-6 pb-4 bg-white shadow-sm z-10 relative">
+      <div className="bg-white shadow-sm z-10 relative">
+        <div className="max-w-5xl mx-auto w-full px-5 lg:px-8 pt-6 pb-4">
         <div className="flex items-center gap-3 mb-3">
           <button
             onClick={() => onNavigate ? onNavigate("lists") : navigate("/lists")}
@@ -306,10 +307,22 @@ const handleAddItem = async (addedItem: any) => {
           <div className="bg-indigo-50 rounded-xl px-3 py-2.5">
             <span style={{ fontSize: 13, fontWeight: 700, color: "#6366F1" }}>${total.toFixed(2)}</span>
           </div>
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setShowAddModal(true)}
+            className="hidden md:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white shadow-sm"
+            style={{ fontSize: 13, fontWeight: 700 }}
+            type="button"
+          >
+            <Plus className="w-4 h-4 text-white" />
+            Add item
+          </motion.button>
+        </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 py-3 pt-4">
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-5xl mx-auto w-full px-5 lg:px-8 py-4">
         {isLoading && items.length === 0 ? (
           <div className="bg-white rounded-2xl p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
             <p className="text-gray-500 text-center" style={{ fontSize: 13 }}>A carregar itens e dependencias...</p>
@@ -427,9 +440,10 @@ const handleAddItem = async (addedItem: any) => {
             <p className="text-gray-500 text-center" style={{ fontSize: 13 }}>Nenhum item adicionado.</p>
           </div>
         )}
+        </div>
       </div>
 
-      <div className="absolute bottom-6 right-6">
+      <div className="fixed bottom-6 right-6 md:hidden">
         <motion.button
           whileTap={{ scale: 0.92 }}
           onClick={() => setShowAddModal(true)}
