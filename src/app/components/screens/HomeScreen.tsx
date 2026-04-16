@@ -1,15 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import {
   Search, Bell, Plus, ChevronRight, TrendingDown, MapPin, Star,
   ShoppingBag, Zap
 } from "lucide-react";
-
-const listItems = [
-  { id: 1, name: "Organic Apples", qty: "1 kg", price: "$2.49", store: "FreshMart", checked: false, color: "#ECFDF5", emoji: "🍎" },
-  { id: 2, name: "Whole Milk 2L", qty: "2 pcs", price: "$3.20", store: "CostPlus", checked: true, color: "#EFF6FF", emoji: "🥛" },
-  { id: 3, name: "Sourdough Bread", qty: "1 loaf", price: "$4.50", store: "BakeryHub", checked: false, color: "#FFF7ED", emoji: "🍞" },
-];
+import { useNavigate } from "react-router-dom";
+import { useLists, ListResponse } from "../../../api/useLists";
+import { useProducts, Product } from "../../../api/useProducts";
+import { useStores, StoreResponse } from "../../../api/useStores";
 
 const deals = [
   { id: 1, name: "Greek Yogurt", discount: "30% off", price: "$1.89", original: "$2.69", store: "FreshMart", dist: "0.3 mi", color: "#EEF2FF", emoji: "🥣" },
@@ -31,16 +29,101 @@ interface HomeScreenProps {
   } | null;
 }
 
-export function HomeScreen({ onNavigate, user }: HomeScreenProps) {
-  const [quickAdd, setQuickAdd] = useState("");
-  const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set([2]));
+const getProductImageSrc = (product: Product) => {
+  const imageValue = product.image?.trim();
+  if (!imageValue) return undefined;
+  if (/^(https?:|data:|blob:|\/)/i.test(imageValue)) return imageValue;
+  return undefined;
+};
 
-  const toggleItem = (id: number) => {
-    setCheckedItems(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+export function HomeScreen({ onNavigate, user }: HomeScreenProps) {
+  const navigate = useNavigate();
+  const { getLists, updateList } = useLists();
+  const { getProductsByIds } = useProducts();
+  const { getStores } = useStores();
+
+  const [quickAdd, setQuickAdd] = useState("");
+  
+  const [latestList, setLatestList] = useState<ListResponse | null>(null);
+  const [myListItems, setMyListItems] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchLatestList() {
+      try {
+        const lists = await getLists();
+        if (lists && lists.length > 0) {
+          const sortedLists = [...lists].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          const latest = sortedLists[0];
+          setLatestList(latest);
+
+          const rawItems = latest.items || [];
+          const sortedItems = [...rawItems].sort((a, b) => (a.checked === b.checked ? 0 : a.checked ? 1 : -1));
+          const top3 = sortedItems.slice(0, 3);
+          
+          if (top3.length > 0) {
+            const productIds = Array.from(new Set(top3.map(i => i.productId)));
+            const storeIds = Array.from(new Set(top3.map(i => i.storeId)));
+            
+            let productsMap: Record<string, Product> = {};
+            let storesMap: Record<string, StoreResponse> = {};
+            
+            if (productIds.length > 0) {
+               try {
+                 const prods = await getProductsByIds(productIds);
+                 prods.forEach(p => productsMap[p.id] = p);
+               } catch(e) {}
+            }
+            if (storeIds.length > 0) {
+               try {
+                 const stores = await getStores({ ids: storeIds.join(',') });
+                 stores.forEach(s => storesMap[s.id] = s);
+               } catch(e) {}
+            }
+
+            const colors = ["#ECFDF5", "#EFF6FF", "#FFF7ED"];
+            const enriched = top3.map((item, idx) => {
+              const product = productsMap[item.productId];
+              const store = storesMap[item.storeId];
+              return {
+                ...item,
+                name: product?.name || "Unknown Product",
+                emoji: (product as any)?.emoji || "📦",
+                imageSrc: product ? getProductImageSrc(product) : undefined,
+                store: store?.name || "Unknown Store",
+                color: colors[idx % colors.length],
+                qty: `${item.quantity}x`
+              };
+            });
+            setMyListItems(enriched);
+          }
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    fetchLatestList();
+  }, [getLists, getProductsByIds, getStores]);
+
+  const handleToggleItem = async (id: number) => {
+    if (!latestList) return;
+    
+    setMyListItems(prev => prev.map(i => i.id === id ? { ...i, checked: !i.checked } : i));
+    
+    const updatedItems = latestList.items.map(i => i.id === id ? { ...i, checked: !i.checked } : i);
+    setLatestList(prev => prev ? { ...prev, items: updatedItems } : null);
+    
+    try {
+      const mappedRequest = updatedItems.map(i => ({
+        productId: i.productId,
+        storeId: i.storeId,
+        quantity: i.quantity,
+        price: i.price,
+        checked: i.checked
+      }));
+      await updateList(latestList.id, undefined, mappedRequest);
+    } catch(e) {
+      console.error(e);
+    }
   };
 
   return (
@@ -126,9 +209,14 @@ export function HomeScreen({ onNavigate, user }: HomeScreenProps) {
         {/* Shopping list preview */}
         <div className="px-5 mb-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-gray-900" style={{ fontSize: 16, fontWeight: 700 }}>My List</h3>
+            <h3 className="text-gray-900" style={{ fontSize: 16, fontWeight: 700 }}>
+              {latestList ? latestList.name : "My List"}
+            </h3>
             <button
-              onClick={() => onNavigate("lists")}
+              onClick={() => {
+                if (latestList) navigate(`/lists/${latestList.id}`);
+                else onNavigate("lists");
+              }}
               className="flex items-center gap-1"
               style={{ fontSize: 13, color: "#6366F1", fontWeight: 600 }}
             >
@@ -136,56 +224,71 @@ export function HomeScreen({ onNavigate, user }: HomeScreenProps) {
             </button>
           </div>
           <div className="bg-white rounded-3xl overflow-hidden shadow-sm" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
-            {listItems.map((item, idx) => (
-              <motion.div
-                key={item.id}
-                className="flex items-center gap-3 px-4 py-3.5"
-                style={{ borderBottom: idx < listItems.length - 1 ? "1px solid #F3F4F6" : "none" }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
-                  style={{ backgroundColor: item.color }}
+            {myListItems.length > 0 ? (
+              myListItems.map((item, idx) => (
+                <motion.div
+                  key={item.id}
+                  className="flex items-center gap-3 px-4 py-3.5"
+                  style={{ borderBottom: idx < myListItems.length - 1 ? "1px solid #F3F4F6" : "none" }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  {item.emoji}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p
-                    className="text-gray-900"
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 600,
-                      textDecoration: checkedItems.has(item.id) ? "line-through" : "none",
-                      color: checkedItems.has(item.id) ? "#9CA3AF" : "#111827",
-                    }}
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg overflow-hidden"
+                    style={{ backgroundColor: item.imageSrc ? "transparent" : item.color }}
                   >
-                    {item.name}
-                  </p>
-                  <p className="text-gray-400" style={{ fontSize: 12 }}>
-                    {item.qty} · {item.store}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "#10B981" }}>
-                    {item.price}
-                  </span>
-                  <button
-                    onClick={() => toggleItem(item.id)}
-                    className="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                    style={{
-                      borderColor: checkedItems.has(item.id) ? "#10B981" : "#D1D5DB",
-                      backgroundColor: checkedItems.has(item.id) ? "#10B981" : "transparent",
-                    }}
-                  >
-                    {checkedItems.has(item.id) && (
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 12 12">
-                        <path d="M2 6l3 3 5-5" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
+                    {item.imageSrc ? (
+                      <img
+                        src={item.imageSrc}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      item.emoji
                     )}
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className="text-gray-900"
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        textDecoration: item.checked ? "line-through" : "none",
+                        color: item.checked ? "#9CA3AF" : "#111827",
+                      }}
+                    >
+                      {item.name}
+                    </p>
+                    <p className="text-gray-400" style={{ fontSize: 12 }}>
+                      {item.qty} · {item.store}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span style={{ fontSize: 14, fontWeight: 700, color: item.checked ? "#9CA3AF" : "#10B981" }}>
+                      €{item.price.toFixed(2)}
+                    </span>
+                    <button
+                      onClick={() => handleToggleItem(item.id)}
+                      className="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                      style={{
+                        borderColor: item.checked ? "#10B981" : "#D1D5DB",
+                        backgroundColor: item.checked ? "#10B981" : "transparent",
+                      }}
+                    >
+                      {item.checked && (
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 12 12">
+                          <path d="M2 6l3 3 5-5" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              <div className="px-4 py-8 text-center text-gray-500" style={{ fontSize: 14 }}>
+                A sua lista está vazia.
+              </div>
+            )}
           </div>
         </div>
 
