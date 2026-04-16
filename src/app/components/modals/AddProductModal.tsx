@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Type, Scan, Grid3x3, Search, ChevronLeft, ChevronRight, Loader, Store } from "lucide-react";
+import { X, Type, Grid3x3, Search, ChevronLeft, ChevronRight, Loader, Store } from "lucide-react";
 import { useProducts, Product, Category } from "../../../api/useProducts";
 import { useStores, StoreResponse } from "../../../api/useStores";
 import { usePrices, PriceResponse } from "../../../api/usePrices";
 import { ImageWithFallback } from "../fallback/ImageWithFallback";
 
-type InputMethod = "text" | "barcode" | "category";
+type InputMethod = "text" | "category";
 
 const categoryImageModules = import.meta.glob("../../../../image/*.png", {
   eager: true,
@@ -49,7 +49,6 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
 
   const [method, setMethod] = useState<InputMethod>("text");
   const [searchInput, setSearchInput] = useState("");
-  const [isScanning, setIsScanning] = useState(false);
   
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedSubCategory, setSelectedSubCategory] = useState<Category | null>(null);
@@ -217,7 +216,6 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
   const handleReset = () => {
     setMethod("text");
     setSearchInput("");
-    setIsScanning(false);
     setSelectedCategory(null);
     setSelectedSubCategory(null);
     setSelectedProduct(null);
@@ -258,11 +256,6 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
     }, 400);
   };
 
-  const startScan = () => {
-     setIsScanning(true);
-     setTimeout(() => setIsScanning(false), 1500);
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -270,16 +263,15 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end"
+      className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={handleClose}
     >
       <motion.div
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 30, stiffness: 300 }}
-        className="w-full bg-white rounded-t-3xl flex flex-col"
-        style={{ maxHeight: "75vh", minHeight: "50vh" }}
+        initial={{ opacity: 0, y: 24, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 24, scale: 0.98 }}
+        transition={{ duration: 0.2 }}
+        className="w-full sm:max-w-3xl bg-white rounded-3xl flex flex-col max-h-[85vh]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100 flex-shrink-0">
@@ -404,22 +396,6 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                     <span style={{ fontSize: 13, fontWeight: 600 }}>Search</span>
                   </button>
                   <button
-                    onClick={() => {
-                      setMethod("barcode");
-                      if (!isScanning) startScan();
-                    }}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all"
-                    style={{
-                      backgroundColor: method === "barcode" ? "#F3E8FF" : "#F3F4F6",
-                      color: method === "barcode" ? "#9333EA" : "#6B7280",
-                    }}
-                  >
-                    <Scan className="w-4 h-4" />
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>
-                      {isScanning ? "Scanning..." : "Scan"}
-                    </span>
-                  </button>
-                  <button
                     onClick={() => setMethod("category")}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all"
                     style={{
@@ -489,7 +465,7 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                     {isLoading ? (
                         <div className="flex justify-center py-4"><Loader className="w-6 h-6 animate-spin text-green-400" /></div>
                     ) : (
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                         {categories.map((cat) => {
                           const imageSrc = getCategoryImageSrc(cat);
                           return (
@@ -526,7 +502,7 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                     {isLoading ? (
                       <div className="flex justify-center py-4"><Loader className="w-6 h-6 animate-spin text-green-400" /></div>
                     ) : subCategories.length > 0 ? (
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                         {subCategories.map((subCat) => {
                           const imageSrc = getCategoryImageSrc(subCat);
                           return (
