@@ -68,7 +68,11 @@ function AppLayout({
               path="/"
               element={
                 <motion.div key="home" className="h-full" {...pageVariants} transition={{ duration: 0.2 }}>
-                  <HomeScreen onNavigate={handleNavigate} user ={user} />
+                  <HomeScreen
+                    onNavigate={handleNavigate}
+                    user={user}
+                    favoriteProductIds={favoriteProductIds}
+                  />
                 </motion.div>
               }
             />
@@ -118,6 +122,7 @@ function AppLayout({
                     favoritesLoading={favoritesLoading}
                     favoritesError={favoritesError}
                     onReloadFavorites={onReloadFavorites}
+                    onToggleFavorite={onToggleFavorite}
                   />
                 </motion.div>
               }
@@ -133,6 +138,7 @@ function AppLayout({
                     favoritesLoading={favoritesLoading}
                     favoritesError={favoritesError}
                     onReloadFavorites={onReloadFavorites}
+                    onToggleFavorite={onToggleFavorite}
                     initialTab="favorites"
                   />
                 </motion.div>
