@@ -19,6 +19,7 @@ interface ProfileScreenProps {
   favoritesLoading: boolean;
   favoritesError: string | null;
   onReloadFavorites: () => Promise<void>;
+  onToggleFavorite: (product: Product) => Promise<void>;
   initialTab?: "settings" | "favorites";
 }
 
@@ -59,6 +60,7 @@ export function ProfileScreen({
   favoritesLoading,
   favoritesError,
   onReloadFavorites,
+  onToggleFavorite,
   initialTab = "settings",
 }: ProfileScreenProps) {
   const [darkMode, setDarkMode] = useState(false);
@@ -67,6 +69,7 @@ export function ProfileScreen({
   const [locationTracking, setLocationTracking] = useState(true);
   const [biometric, setBiometric] = useState(false);
   const [stores, setStores] = useState(preferredStores);
+  const [favoritePendingId, setFavoritePendingId] = useState<string | null>(null);
 
   const toggleStore = (idx: number) => {
     setStores(prev => prev.map((s, i) => i === idx ? { ...s, active: !s.active } : s));
@@ -305,7 +308,27 @@ export function ProfileScreen({
                             {product.name}
                           </p>
                         </div>
-                        <Star className="w-4 h-4 text-amber-500" fill="#F59E0B" />
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setFavoritePendingId(product.id);
+                            try {
+                              await onToggleFavorite(product);
+                            } finally {
+                              setFavoritePendingId(null);
+                            }
+                          }}
+                          className="w-8 h-8 rounded-xl bg-white flex items-center justify-center disabled:opacity-60"
+                          disabled={favoritePendingId === product.id}
+                          title="Remover dos favoritos"
+                          aria-label="Remover dos favoritos"
+                        >
+                          {favoritePendingId === product.id ? (
+                            <Loader className="w-4 h-4 text-amber-500 animate-spin" />
+                          ) : (
+                            <Star className="w-4 h-4 text-amber-500" fill="#F59E0B" />
+                          )}
+                        </button>
                       </div>
                     );
                   })}

@@ -41,5 +41,26 @@ export function useProducts() {
     return await get(`/products?ids=${encodeURIComponent(ids.join(","))}`);
   }, [get]);
 
-  return { searchProducts, getMainCategories, getSubCategories, getProductsByCategory, getProductsByIds };
+  const getRelatedProductsByFavoriteIds = useCallback(
+    async (favoriteIds: string[], limit?: number, maxDistance?: number): Promise<Product[]> => {
+      if (!favoriteIds.length) return [];
+
+      const params = new URLSearchParams();
+      params.set("favoriteIds", favoriteIds.join(","));
+      if (typeof limit === "number") params.set("limit", String(limit));
+      if (typeof maxDistance === "number") params.set("maxDistance", String(maxDistance));
+
+      return await get(`/products/related?${params.toString()}`);
+    },
+    [get]
+  );
+
+  return {
+    searchProducts,
+    getMainCategories,
+    getSubCategories,
+    getProductsByCategory,
+    getProductsByIds,
+    getRelatedProductsByFavoriteIds,
+  };
 }

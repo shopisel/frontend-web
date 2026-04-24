@@ -38,7 +38,7 @@ type PricesScreenProps = {
 };
 
 export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScreenProps) {
-  const { searchProducts, getMainCategories, getSubCategories, getProductsByCategory } = useProducts();
+  const { searchProducts, getMainCategories, getSubCategories, getProductsByCategory, getRelatedProductsByFavoriteIds } = useProducts();
   const { getPrices } = usePrices();
   const { getStores } = useStores();
 
@@ -46,8 +46,10 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
   const [subCategories, setSubCategories] = useState<Category[]>([]);
   const [selectedMainCat, setSelectedMainCat] = useState<Category | null>(null);
   const [selectedSubCat, setSelectedSubCat] = useState<Category | null>(null);
+  const [showRelatedOnly, setShowRelatedOnly] = useState(false);
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [storeRows, setStoreRows] = useState<StoreRow[]>([]);
 
@@ -58,6 +60,7 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
   const [isLoadingCats, setIsLoadingCats] = useState(false);
   const [isLoadingSubCats, setIsLoadingSubCats] = useState(false);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [isLoadingRelatedProducts, setIsLoadingRelatedProducts] = useState(false);
   const [isLoadingStores, setIsLoadingStores] = useState(false);
   const [favoritePendingId, setFavoritePendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -77,6 +80,7 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     if (value.trim()) {
+      setShowRelatedOnly(false);
       resetCategorySelection();
       resetProductSelection();
     }
@@ -84,7 +88,15 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
 
   const handleSelectMainCategory = (cat: Category | null) => {
     if (searchQuery.trim()) setSearchQuery("");
+    setShowRelatedOnly(false);
     setSelectedMainCat(cat);
+  };
+
+  const handleSelectRelatedCategory = () => {
+    if (searchQuery.trim()) setSearchQuery("");
+    setShowRelatedOnly(true);
+    resetCategorySelection();
+    resetProductSelection();
   };
 
   const handleSelectSubCategory = (cat: Category) => {
@@ -205,6 +217,44 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
   }, [selectedSubCat, searchQuery, getProductsByCategory]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const loadRelatedProducts = async () => {
+      if (!favoriteProductIds.length) {
+        setRelatedProducts([]);
+        return;
+      }
+
+      setIsLoadingRelatedProducts(true);
+      setError(null);
+      try {
+        const data = await getRelatedProductsByFavoriteIds(favoriteProductIds, 50);
+        if (cancelled) return;
+        setRelatedProducts(data || []);
+      } catch (e) {
+        if (cancelled) return;
+        setError(e instanceof Error ? e.message : "Failed to load related products");
+        setRelatedProducts([]);
+      } finally {
+        if (!cancelled) setIsLoadingRelatedProducts(false);
+      }
+    };
+
+    loadRelatedProducts();
+    return () => {
+      cancelled = true;
+    };
+  }, [favoriteProductIds, getRelatedProductsByFavoriteIds]);
+
+  useEffect(() => {
+    if (searchQuery.trim() || !showRelatedOnly) return;
+
+    setProducts(relatedProducts);
+    setSelectedProduct(null);
+    setStoreRows([]);
+  }, [showRelatedOnly, searchQuery, relatedProducts]);
+
+  useEffect(() => {
     if (!products.length) {
       setSelectedProduct(null);
       setStoreRows([]);
@@ -313,13 +363,27 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
             onClick={() => handleSelectMainCategory(null)}
             className="flex-shrink-0 px-4 py-2 rounded-xl"
             animate={{
-              backgroundColor: selectedMainCat === null ? "#6366F1" : "#F3F4F6",
-              color: selectedMainCat === null ? "#FFFFFF" : "#6B7280",
+              backgroundColor: selectedMainCat === null && !showRelatedOnly ? "#6366F1" : "#F3F4F6",
+              color: selectedMainCat === null && !showRelatedOnly ? "#FFFFFF" : "#6B7280",
             }}
             transition={{ duration: 0.2 }}
             style={{ fontSize: 13, fontWeight: 600 }}
           >
             All
+          </motion.button>
+
+          <motion.button
+            key="__related__"
+            onClick={handleSelectRelatedCategory}
+            className="flex-shrink-0 px-4 py-2 rounded-xl"
+            animate={{
+              backgroundColor: showRelatedOnly ? "#6366F1" : "#F3F4F6",
+              color: showRelatedOnly ? "#FFFFFF" : "#6B7280",
+            }}
+            transition={{ duration: 0.2 }}
+            style={{ fontSize: 13, fontWeight: 600 }}
+          >
+            Relacionados
           </motion.button>
 
           {isLoadingCats ? (
@@ -398,10 +462,12 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
             </div>
           )}
 
-          {isLoadingProducts ? (
+          {isLoadingProducts || (showRelatedOnly && isLoadingRelatedProducts) ? (
             <div className="flex items-center gap-2 text-gray-400">
               <Loader className="w-4 h-4 animate-spin" />
-              <span style={{ fontSize: 13, fontWeight: 600 }}>Loading products</span>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>
+                {showRelatedOnly ? "Loading related products" : "Loading products"}
+              </span>
             </div>
           ) : products.length > 0 ? (
             <div
@@ -465,6 +531,8 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
             <div className="text-gray-400" style={{ fontSize: 13, fontWeight: 600 }}>
               {searchQuery.trim()
                 ? "No products found"
+                : showRelatedOnly
+                  ? "No related products for your favorites"
                 : selectedMainCat && !selectedSubCat
                   ? "Select a subcategory to see products"
                   : "No products to show"}
@@ -496,7 +564,7 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
                 </div>
                 <div className="flex-1">
                   <p className="text-indigo-200" style={{ fontSize: 12 }}>
-                    {selectedSubCat?.name || selectedMainCat?.name || "All products"}
+                    {showRelatedOnly ? "Relacionados" : (selectedSubCat?.name || selectedMainCat?.name || "All products")}
                   </p>
                   <p className="text-white" style={{ fontSize: 16, fontWeight: 700 }}>
                     {selectedProduct.name}

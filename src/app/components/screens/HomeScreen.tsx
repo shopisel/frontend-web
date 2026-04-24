@@ -54,6 +54,7 @@ interface HomeScreenProps {
     email?: string;
     username?: string;
   } | null;
+  favoriteProductIds?: string[];
 }
 
 const getProductImageSrc = (product: Product) => {
@@ -70,10 +71,10 @@ const LoadingBall = ({ size = 16 }: { size?: number }) => (
   />
 );
 
-export function HomeScreen({ onNavigate, user }: HomeScreenProps) {
+export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeScreenProps) {
   const navigate = useNavigate();
   const { getLists, updateList } = useLists();
-  const { getProductsByIds } = useProducts();
+  const { getProductsByIds, getRelatedProductsByFavoriteIds } = useProducts();
   const { getStores } = useStores();
   const { getMyFavoriteProductIds } = useAccounts();
   const { getPrices } = usePrices();
@@ -83,8 +84,10 @@ export function HomeScreen({ onNavigate, user }: HomeScreenProps) {
   const [latestList, setLatestList] = useState<ListResponse | null>(null);
   const [myListItems, setMyListItems] = useState<HomeListItem[]>([]);
   const [favoriteDeals, setFavoriteDeals] = useState<FavoriteDeal[]>([]);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [isLoadingLatestList, setIsLoadingLatestList] = useState(false);
   const [isLoadingFavoriteDeals, setIsLoadingFavoriteDeals] = useState(false);
+  const [isLoadingRelatedProducts, setIsLoadingRelatedProducts] = useState(false);
   const [togglePendingId, setTogglePendingId] = useState<number | null>(null);
   const [addPendingProductId, setAddPendingProductId] = useState<string | null>(null);
 
@@ -291,6 +294,28 @@ export function HomeScreen({ onNavigate, user }: HomeScreenProps) {
 
     fetchFavoriteDeals();
   }, [getMyFavoriteProductIds, getProductsByIds, getPrices, getStores]);
+
+  useEffect(() => {
+    async function fetchRelatedProducts() {
+      if (!favoriteProductIds.length) {
+        setRelatedProducts([]);
+        return;
+      }
+
+      setIsLoadingRelatedProducts(true);
+      try {
+        const related = await getRelatedProductsByFavoriteIds(favoriteProductIds, 3);
+        setRelatedProducts(related);
+      } catch (error) {
+        console.error(error);
+        setRelatedProducts([]);
+      } finally {
+        setIsLoadingRelatedProducts(false);
+      }
+    }
+
+    fetchRelatedProducts();
+  }, [favoriteProductIds, getRelatedProductsByFavoriteIds]);
 
   const handleToggleItem = async (id: number) => {
     if (!latestList) return;
@@ -637,6 +662,68 @@ export function HomeScreen({ onNavigate, user }: HomeScreenProps) {
             {!isLoadingFavoriteDeals && !favoriteDeals.length && (
               <div className="w-full rounded-3xl bg-white px-4 py-6 text-center text-gray-500" style={{ fontSize: 14 }}>
                 Sem favoritos com desconto de momento.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Related to favorites */}
+        <div className="mb-4">
+          <div className="px-5 flex items-center justify-between mb-3">
+            <h3 className="text-gray-900" style={{ fontSize: 16, fontWeight: 700 }}>Relacionados com os favoritos</h3>
+            <button
+              onClick={() => onNavigate("prices")}
+              className="flex items-center gap-1"
+              style={{ fontSize: 13, color: "#6366F1", fontWeight: 600 }}
+            >
+              See all <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex gap-3 px-5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+            {isLoadingRelatedProducts && (
+              <div className="w-full rounded-3xl bg-white px-4 py-6 flex items-center justify-center">
+                <LoadingBall size={20} />
+              </div>
+            )}
+            {!isLoadingRelatedProducts && relatedProducts.map((product) => (
+              <motion.div
+                key={product.id}
+                className="rounded-3xl p-4 flex-shrink-0 w-44 relative overflow-hidden"
+                style={{ backgroundColor: "#EEF2FF", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}
+                whileTap={{ scale: 0.96 }}
+                whileHover={{ y: -2 }}
+              >
+                <div className="w-14 h-14 rounded-2xl bg-white/80 mb-2 overflow-hidden flex items-center justify-center">
+                  {getProductImageSrc(product) ? (
+                    <img
+                      src={getProductImageSrc(product)}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span className="text-3xl">{(product as any).emoji || "📦"}</span>
+                  )}
+                </div>
+                <p
+                  className="text-gray-800"
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                    minHeight: 38,
+                  }}
+                >
+                  {product.name}
+                </p>
+              </motion.div>
+            ))}
+            {!isLoadingRelatedProducts && !relatedProducts.length && (
+              <div className="w-full rounded-3xl bg-white px-4 py-6 text-center text-gray-500" style={{ fontSize: 14 }}>
+                Sem produtos relacionados para mostrar.
               </div>
             )}
           </div>
