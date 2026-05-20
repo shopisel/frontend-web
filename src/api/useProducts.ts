@@ -11,6 +11,7 @@ export interface Category {
 export interface Product {
   id: string;
   name: string;
+  brand?: string | null;
   barcode: string;
   categoryId: string;
   image?: string;

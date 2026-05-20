@@ -250,6 +250,7 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
       originalPrice: hasSale ? knownPrice?.price : undefined,
       checked: false,
       name: selectedProduct.name,
+      brand: selectedProduct.brand ?? undefined,
       emoji: selectedProduct.emoji || "📦",
       storeName: store.name,
     });
@@ -465,6 +466,11 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                             </div>
                             <div className="flex-1 text-left">
                               <p className="text-gray-900" style={{ fontSize: 14, fontWeight: 600 }}>{product.name}</p>
+                              {product.brand ? (
+                                <p className="text-gray-500 truncate" style={{ fontSize: 12 }}>
+                                  {product.brand}
+                                </p>
+                              ) : null}
                               <p className="text-gray-500" style={{ fontSize: 12 }}>Clica para escolher loja</p>
                             </div>
                             <ChevronRight className="w-4 h-4 text-gray-300" />
@@ -582,6 +588,11 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                           </div>
                           <div className="flex-1 text-left">
                             <p className="text-gray-900" style={{ fontSize: 14, fontWeight: 600 }}>{product.name}</p>
+                            {product.brand ? (
+                              <p className="text-gray-500 truncate" style={{ fontSize: 12 }}>
+                                {product.brand}
+                              </p>
+                            ) : null}
                             <p className="text-gray-500" style={{ fontSize: 12 }}>Clica para escolher loja</p>
                           </div>
                           <ChevronRight className="w-4 h-4 text-gray-300" />
