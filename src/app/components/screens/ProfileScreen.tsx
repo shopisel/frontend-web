@@ -283,6 +283,11 @@ export function ProfileScreen({
                           >
                             {product.name}
                           </p>
+                          {product.brand ? (
+                            <p className="text-gray-500 truncate" style={{ fontSize: 12 }}>
+                              {product.brand}
+                            </p>
+                          ) : null}
                         </div>
                         <button
                           type="button"

@@ -11,6 +11,7 @@ import { usePrices, calculateDiscountPercentage } from "../../../api/usePrices";
 
 interface EnrichedItem extends ListItemResponse {
   name: string;
+  brand?: string | null;
   emoji: string;
   storeName: string;
   imageSrc?: string;
@@ -108,6 +109,7 @@ export function ListScreen({ onNavigate }: { onNavigate?: (tab: string) => void 
       return {
         ...item,
         name: product?.name || "Unknown Product",
+        brand: product?.brand ?? null,
         emoji: (product as any)?.emoji || "📦",
         imageSrc: product ? getProductImageSrc(product) : undefined,
         storeName: storesMap[item.storeId]?.name || "Unknown Store",
@@ -197,6 +199,7 @@ const handleAddItem = async (addedItem: any) => {
     if (!listId) return;
 
     let name = addedItem.name || "Unknown Product";
+    let brand: string | null | undefined = typeof addedItem.brand === "string" ? addedItem.brand : undefined;
     let emoji = addedItem.emoji || "📦";
     let storeName = addedItem.storeName || "Unknown Store";
 
@@ -209,6 +212,7 @@ const handleAddItem = async (addedItem: any) => {
         const product = products?.[0];
         if (product) {
           name = product.name || name;
+          brand = product.brand ?? brand ?? null;
           emoji = (product as any)?.emoji || emoji;
           imageSrc = getProductImageSrc(product) || imageSrc;
         }
@@ -241,6 +245,7 @@ const handleAddItem = async (addedItem: any) => {
           : undefined,
       checked: addedItem.checked,
       name,
+      brand: brand ?? null,
       emoji,
       imageSrc,
       storeName,
@@ -296,7 +301,11 @@ const handleAddItem = async (addedItem: any) => {
 
   const filteredItems = useMemo(() => {
     if (!searchInput.trim()) return items;
-    return items.filter(i => i.name.toLowerCase().includes(searchInput.toLowerCase()));
+    const needle = searchInput.toLowerCase();
+    return items.filter((i) => {
+      if (i.name.toLowerCase().includes(needle)) return true;
+      return Boolean(i.brand && i.brand.toLowerCase().includes(needle));
+    });
   }, [items, searchInput]);
   const shouldAnimateRows = filteredItems.length <= 24;
 
@@ -439,6 +448,11 @@ const handleAddItem = async (addedItem: any) => {
                     >
                       {item.name}
                     </p>
+                    {item.brand ? (
+                      <p className="text-gray-400 truncate" style={{ fontSize: 12 }}>
+                        {item.brand}
+                      </p>
+                    ) : null}
                     <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1 bg-gray-50 rounded-lg px-1 py-0.5">
                     <button

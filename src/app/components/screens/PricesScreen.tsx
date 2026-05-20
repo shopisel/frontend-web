@@ -12,6 +12,8 @@ type StoreRow = {
   price: number;
   originalPrice: number;
   sale?: number;
+  quantityText?: string | null;
+  unitPriceText?: string | null;
   dist?: string;
   distKm?: number;
   rating?: number;
@@ -288,6 +290,8 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
           price: getEffectivePrice(p),
           originalPrice: p.price,
           sale: p.sale,
+          quantityText: p.quantityText,
+          unitPriceText: p.unitPriceText,
         }));
 
         if (cancelled) return;
@@ -322,6 +326,10 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
   }, [sortedStores]);
 
   const selectedProductFavorite = selectedProduct ? favoriteProductIds.includes(selectedProduct.id) : false;
+  const selectedUnitPriceText = useMemo(() => {
+    const best = sortedStores.find((row) => Boolean(row.unitPriceText?.trim()));
+    return best?.unitPriceText?.trim() || "";
+  }, [sortedStores]);
 
   const handleToggleFavorite = async (product: Product) => {
     setFavoritePendingId(product.id);
@@ -506,20 +514,27 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
                             <span className="text-xl">{p.emoji || "📦"}</span>
                           )}
                         </div>
-                        <p
-                          className="text-gray-900"
-                          style={{
-                            fontSize: 13,
-                            fontWeight: 700,
-                            lineHeight: "18px",
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                          }}
-                        >
-                          {p.name}
-                        </p>
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className="text-gray-900"
+                            style={{
+                              fontSize: 13,
+                              fontWeight: 700,
+                              lineHeight: "18px",
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {p.name}
+                          </p>
+                          {p.brand ? (
+                            <p className="text-gray-500 truncate" style={{ fontSize: 12 }}>
+                              {p.brand}
+                            </p>
+                          ) : null}
+                        </div>
                         {isFavorite && <Star className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" fill="#F59E0B" />}
                       </div>
                     </motion.button>
@@ -569,6 +584,11 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
                   <p className="text-white" style={{ fontSize: 16, fontWeight: 700 }}>
                     {selectedProduct.name}
                   </p>
+                  {(selectedProduct.brand || selectedUnitPriceText) ? (
+                    <p className="text-indigo-100 truncate" style={{ fontSize: 12, fontWeight: 600 }}>
+                      {[selectedProduct.brand, selectedUnitPriceText].filter(Boolean).join(" | ")}
+                    </p>
+                  ) : null}
                 </div>
                 <button
                   type="button"
@@ -756,6 +776,11 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
                       <p className="text-gray-900" style={{ fontSize: 14, fontWeight: 700 }}>
                         {store.name}
                       </p>
+                      {(store.quantityText || store.unitPriceText) ? (
+                        <p className="text-gray-400 truncate" style={{ fontSize: 12 }}>
+                          {[store.quantityText, store.unitPriceText].filter(Boolean).join(" · ")}
+                        </p>
+                      ) : null}
                       {(store.dist || typeof store.rating === "number") && (
                         <div className="flex items-center gap-1.5">
                           {store.dist && (
