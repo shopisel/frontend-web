@@ -7,6 +7,7 @@ import { usePrices, PriceResponse } from "../../../api/usePrices";
 import { ImageWithFallback } from "../fallback/ImageWithFallback";
 
 type InputMethod = "text" | "category";
+const PRODUCTS_PAGE_SIZE = 10;
 
 const categoryImageModules = import.meta.glob("../../../../image/*.png", {
   eager: true,
@@ -65,6 +66,8 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
   const [productPrices, setProductPrices] = useState<PriceResponse[]>([]);
   
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMoreProducts, setIsLoadingMoreProducts] = useState(false);
+  const [hasMoreProducts, setHasMoreProducts] = useState(false);
   const [isLoadingStore, setIsLoadingStore] = useState(false);
 
   const getCategoryImageSrc = (category: Category) => {
@@ -107,16 +110,22 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
     if (method !== "text") return;
     if (!searchInput.trim()) {
       setProducts([]);
+      setHasMoreProducts(false);
+      setIsLoadingMoreProducts(false);
       return;
     }
 
     const timer = setTimeout(async () => {
       setIsLoading(true);
+      setHasMoreProducts(false);
+      setIsLoadingMoreProducts(false);
       try {
-        const data = await searchProducts(searchInput);
+        const data = await searchProducts(searchInput, PRODUCTS_PAGE_SIZE, 0);
         setProducts(data || []);
+        setHasMoreProducts((data || []).length === PRODUCTS_PAGE_SIZE);
       } catch (e) {
         console.error(e);
+        setHasMoreProducts(false);
       } finally {
         setIsLoading(false);
       }
@@ -141,11 +150,15 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
       setSelectedSubCategory(null);
       setSubCategories([]);
       setProducts([]);
+      setHasMoreProducts(false);
+      setIsLoadingMoreProducts(false);
       fetchSubCats();
     } else {
       if (method === "category") {
         setSubCategories([]);
         setProducts([]);
+        setHasMoreProducts(false);
+        setIsLoadingMoreProducts(false);
       }
     }
   }, [selectedCategory, getSubCategories, method]);
@@ -154,11 +167,15 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
     if (selectedSubCategory) {
       const fetchSubCatProducts = async () => {
         setIsLoading(true);
+        setHasMoreProducts(false);
+        setIsLoadingMoreProducts(false);
         try {
-          const data = await getProductsByCategory(selectedSubCategory.id);
+          const data = await getProductsByCategory(selectedSubCategory.id, PRODUCTS_PAGE_SIZE, 0);
           setProducts(data || []);
+          setHasMoreProducts((data || []).length === PRODUCTS_PAGE_SIZE);
         } catch(e) {
            console.error(e);
+           setHasMoreProducts(false);
         } finally {
            setIsLoading(false);
         }
@@ -166,8 +183,37 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
       fetchSubCatProducts();
     } else if (selectedCategory && method === "category") {
       setProducts([]);
+      setHasMoreProducts(false);
+      setIsLoadingMoreProducts(false);
     }
   }, [selectedSubCategory, getProductsByCategory, method, selectedCategory]);
+
+  const loadMoreProducts = async () => {
+    if (isLoading || isLoadingMoreProducts || !hasMoreProducts) return;
+
+    const currentSkip = products.length;
+    setIsLoadingMoreProducts(true);
+    try {
+      if (method === "text") {
+        const query = searchInput.trim();
+        if (!query) return;
+        const data = await searchProducts(query, PRODUCTS_PAGE_SIZE, currentSkip);
+        setProducts((prev) => [...prev, ...(data || [])]);
+        setHasMoreProducts((data || []).length === PRODUCTS_PAGE_SIZE);
+        return;
+      }
+
+      if (method === "category" && selectedSubCategory) {
+        const data = await getProductsByCategory(selectedSubCategory.id, PRODUCTS_PAGE_SIZE, currentSkip);
+        setProducts((prev) => [...prev, ...(data || [])]);
+        setHasMoreProducts((data || []).length === PRODUCTS_PAGE_SIZE);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoadingMoreProducts(false);
+    }
+  };
 
   useEffect(() => {
     if (selectedProduct) {
@@ -443,7 +489,8 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                       {isLoading ? (
                         <div className="flex justify-center py-4"><Loader className="w-6 h-6 animate-spin text-indigo-400" /></div>
                       ) : products.length > 0 ? (
-                        products.map((product) => (
+                        <>
+                          {products.map((product) => (
                           <motion.button
                             key={product.id}
                             onClick={() => handleProductClick(product)}
@@ -475,7 +522,34 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                             </div>
                             <ChevronRight className="w-4 h-4 text-gray-300" />
                           </motion.button>
-                        ))
+                          ))}
+
+                          {(hasMoreProducts || isLoadingMoreProducts) && (
+                            <motion.button
+                              onClick={() => void loadMoreProducts()}
+                              whileTap={{ scale: 0.985 }}
+                              disabled={isLoadingMoreProducts}
+                              className="w-full rounded-2xl border-2 px-4 py-3 bg-white"
+                              animate={{
+                                borderColor: "#E5E7EB",
+                                backgroundColor: isLoadingMoreProducts ? "#F9FAFB" : "white",
+                              }}
+                              transition={{ duration: 0.15 }}
+                              style={{ fontSize: 13, fontWeight: 800 }}
+                            >
+                              <span className="inline-flex items-center justify-center gap-2 text-gray-700">
+                                {isLoadingMoreProducts ? (
+                                  <>
+                                    <Loader className="w-4 h-4 animate-spin text-gray-400" />
+                                    A carregar...
+                                  </>
+                                ) : (
+                                  <>Carregar mais</>
+                                )}
+                              </span>
+                            </motion.button>
+                          )}
+                        </>
                       ) : searchInput.length > 0 ? (
                          <p className="text-center text-gray-400 py-4" style={{fontSize: 13}}>Nenhum produto encontrado.</p>
                       ) : null}
@@ -565,13 +639,15 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                     <div className="space-y-2">
                       {isLoading ? (
                          <div className="flex justify-center py-4"><Loader className="w-6 h-6 animate-spin text-green-400" /></div>
-                      ) : products.map((product) => (
-                        <motion.button
-                          key={product.id}
-                          onClick={() => handleProductClick(product)}
-                          className="w-full flex items-center gap-3 p-3 rounded-xl transition-all hover:bg-gray-50"
-                          whileTap={{ scale: 0.98 }}
-                        >
+                      ) : (
+                        <>
+                          {products.map((product) => (
+                            <motion.button
+                              key={product.id}
+                              onClick={() => handleProductClick(product)}
+                              className="w-full flex items-center gap-3 p-3 rounded-xl transition-all hover:bg-gray-50"
+                              whileTap={{ scale: 0.98 }}
+                            >
                           <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-lg shadow-sm">
                             {getProductImageSrc(product) ? (
                               <ImageWithFallback
@@ -596,8 +672,36 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                             <p className="text-gray-500" style={{ fontSize: 12 }}>Clica para escolher loja</p>
                           </div>
                           <ChevronRight className="w-4 h-4 text-gray-300" />
-                        </motion.button>
-                      ))}
+                            </motion.button>
+                          ))}
+
+                          {(hasMoreProducts || isLoadingMoreProducts) && (
+                            <motion.button
+                              onClick={() => void loadMoreProducts()}
+                              whileTap={{ scale: 0.985 }}
+                              disabled={isLoadingMoreProducts}
+                              className="w-full rounded-2xl border-2 px-4 py-3 bg-white"
+                              animate={{
+                                borderColor: "#E5E7EB",
+                                backgroundColor: isLoadingMoreProducts ? "#F9FAFB" : "white",
+                              }}
+                              transition={{ duration: 0.15 }}
+                              style={{ fontSize: 13, fontWeight: 800 }}
+                            >
+                              <span className="inline-flex items-center justify-center gap-2 text-gray-700">
+                                {isLoadingMoreProducts ? (
+                                  <>
+                                    <Loader className="w-4 h-4 animate-spin text-gray-400" />
+                                    A carregar...
+                                  </>
+                                ) : (
+                                  <>Carregar mais</>
+                                )}
+                              </span>
+                            </motion.button>
+                          )}
+                        </>
+                      )}
                     </div>
                   </motion.div>
                 )}

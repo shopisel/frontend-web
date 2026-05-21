@@ -34,6 +34,8 @@ const getProductImageSrc = (product: Product) => {
   return undefined;
 };
 
+const PRODUCTS_PAGE_SIZE = 50;
+
 type PricesScreenProps = {
   favoriteProductIds: string[];
   onToggleFavorite: (product: Product) => Promise<void>;
@@ -62,6 +64,8 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
   const [isLoadingCats, setIsLoadingCats] = useState(false);
   const [isLoadingSubCats, setIsLoadingSubCats] = useState(false);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [isLoadingMoreProducts, setIsLoadingMoreProducts] = useState(false);
+  const [hasMoreProducts, setHasMoreProducts] = useState(false);
   const [isLoadingRelatedProducts, setIsLoadingRelatedProducts] = useState(false);
   const [isLoadingStores, setIsLoadingStores] = useState(false);
   const [favoritePendingId, setFavoritePendingId] = useState<string | null>(null);
@@ -77,6 +81,8 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
     setProducts([]);
     setSelectedProduct(null);
     setStoreRows([]);
+    setHasMoreProducts(false);
+    setIsLoadingMoreProducts(false);
   };
 
   const handleSearchChange = (value: string) => {
@@ -167,15 +173,18 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
     let cancelled = false;
     const timer = setTimeout(async () => {
       setIsLoadingProducts(true);
+      setHasMoreProducts(false);
       setError(null);
       try {
-        const data = await searchProducts(query);
+        const data = await searchProducts(query, PRODUCTS_PAGE_SIZE, 0);
         if (cancelled) return;
         setProducts(data || []);
+        setHasMoreProducts((data || []).length === PRODUCTS_PAGE_SIZE);
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : "Failed to search products");
         setProducts([]);
+        setHasMoreProducts(false);
       } finally {
         if (!cancelled) setIsLoadingProducts(false);
       }
@@ -193,15 +202,18 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
     let cancelled = false;
     const loadProductsForSubCat = async (subCatId: string) => {
       setIsLoadingProducts(true);
+      setHasMoreProducts(false);
       setError(null);
       try {
-        const data = await getProductsByCategory(subCatId);
+        const data = await getProductsByCategory(subCatId, PRODUCTS_PAGE_SIZE, 0);
         if (cancelled) return;
         setProducts(data || []);
+        setHasMoreProducts((data || []).length === PRODUCTS_PAGE_SIZE);
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : "Failed to load products");
         setProducts([]);
+        setHasMoreProducts(false);
       } finally {
         if (!cancelled) setIsLoadingProducts(false);
       }
@@ -254,7 +266,38 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
     setProducts(relatedProducts);
     setSelectedProduct(null);
     setStoreRows([]);
+    setHasMoreProducts(false);
   }, [showRelatedOnly, searchQuery, relatedProducts]);
+
+  const loadMoreProducts = async () => {
+    if (isLoadingProducts || isLoadingMoreProducts || !hasMoreProducts) return;
+    if (showRelatedOnly) return;
+
+    const query = searchQuery.trim();
+    const currentSkip = products.length;
+
+    setIsLoadingMoreProducts(true);
+    setError(null);
+    try {
+      if (query) {
+        const data = await searchProducts(query, PRODUCTS_PAGE_SIZE, currentSkip);
+        setProducts((prev) => [...prev, ...(data || [])]);
+        setHasMoreProducts((data || []).length === PRODUCTS_PAGE_SIZE);
+        return;
+      }
+
+      if (selectedSubCat) {
+        const data = await getProductsByCategory(selectedSubCat.id, PRODUCTS_PAGE_SIZE, currentSkip);
+        setProducts((prev) => [...prev, ...(data || [])]);
+        setHasMoreProducts((data || []).length === PRODUCTS_PAGE_SIZE);
+        return;
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load more products");
+    } finally {
+      setIsLoadingMoreProducts(false);
+    }
+  };
 
   useEffect(() => {
     if (!products.length) {
@@ -538,8 +581,35 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
                         {isFavorite && <Star className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" fill="#F59E0B" />}
                       </div>
                     </motion.button>
-                  );
+                    );
                 })}
+                {(hasMoreProducts || isLoadingMoreProducts) && !showRelatedOnly && (
+                  <div className="col-span-full pt-1">
+                    <motion.button
+                      onClick={() => void loadMoreProducts()}
+                      whileTap={{ scale: 0.985 }}
+                      disabled={isLoadingMoreProducts}
+                      className="w-full rounded-2xl border-2 px-4 py-3 bg-white"
+                      animate={{
+                        borderColor: "#E5E7EB",
+                        backgroundColor: isLoadingMoreProducts ? "#F9FAFB" : "white",
+                      }}
+                      transition={{ duration: 0.15 }}
+                      style={{ fontSize: 13, fontWeight: 800 }}
+                    >
+                      <span className="inline-flex items-center justify-center gap-2 text-gray-700">
+                        {isLoadingMoreProducts ? (
+                          <>
+                            <Loader className="w-4 h-4 animate-spin text-gray-400" />
+                            A carregar...
+                          </>
+                        ) : (
+                          <>Carregar mais</>
+                        )}
+                      </span>
+                    </motion.button>
+                  </div>
+                )}
               </div>
             </div>
           ) : (

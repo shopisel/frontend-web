@@ -21,8 +21,12 @@ export interface Product {
 export function useProducts() {
   const { get } = useApi();
 
-  const searchProducts = useCallback(async (query: string): Promise<Product[]> => {
-    return await get(`/products?name=${encodeURIComponent(query)}`);
+  const searchProducts = useCallback(async (query: string, limit?: number, skip?: number): Promise<Product[]> => {
+    const params = new URLSearchParams();
+    params.set("name", query);
+    if (typeof limit === "number") params.set("limit", String(limit));
+    if (typeof skip === "number") params.set("skip", String(skip));
+    return await get(`/products?${params.toString()}`);
   }, [get]);
 
   const getMainCategories = useCallback(async (): Promise<Category[]> => {
@@ -33,8 +37,12 @@ export function useProducts() {
     return await get(`/categories/${categoryId}/subcategories`);
   }, [get]);
 
-  const getProductsByCategory = useCallback(async (categoryId: string): Promise<Product[]> => {
-    return await get(`/products?categoryId=${encodeURIComponent(categoryId)}`);
+  const getProductsByCategory = useCallback(async (categoryId: string, limit?: number, skip?: number): Promise<Product[]> => {
+    const params = new URLSearchParams();
+    params.set("categoryId", categoryId);
+    if (typeof limit === "number") params.set("limit", String(limit));
+    if (typeof skip === "number") params.set("skip", String(skip));
+    return await get(`/products?${params.toString()}`);
   }, [get]);
 
   const getProductsByIds = useCallback(async (ids: string[]): Promise<Product[]> => {
