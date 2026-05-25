@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { motion } from "motion/react";
 import { ShoppingCart, Sparkles } from "lucide-react";
+import { brand } from "../../../brand.config";
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -13,7 +14,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
   }, [onComplete]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-indigo-600 via-indigo-500 to-violet-600 relative overflow-hidden">
+    <div className={`flex flex-col items-center justify-center h-full bg-gradient-to-br ${brand.colors.splashGradient} relative overflow-hidden`}>
       {/* Background circles */}
       <motion.div
         className="absolute top-[-80px] right-[-80px] w-64 h-64 rounded-full bg-white/10"
@@ -46,12 +47,12 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         </div>
         <div className="flex flex-col items-center gap-1">
           <h1 className="text-white" style={{ fontSize: 32, fontWeight: 700, letterSpacing: -0.5 }}>
-            SmartCart
+            {brand.name}
           </h1>
           <div className="flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-indigo-200" />
             <p className="text-indigo-200" style={{ fontSize: 13, fontWeight: 500 }}>
-              Shop smarter, save more
+              {brand.tagline}
             </p>
             <Sparkles className="w-3.5 h-3.5 text-indigo-200" />
           </div>
