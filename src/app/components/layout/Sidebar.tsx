@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   Home, List, BarChart2, User, LogOut,
 } from "lucide-react";
+import { brand } from "../../../brand.config";
 
 const navItems = [
   { to: "/",        label: "Home",    icon: Home,      exact: true  },
@@ -33,16 +34,16 @@ export function Sidebar({ onLogout }: SidebarProps) {
           className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-lg flex-shrink-0 overflow-hidden"
         >
           <img
-            src="/shopisel.png"
-            alt="Shopisel logo"
+            src={brand.logoUrl}
+            alt={`${brand.name} logo`}
             className="w-full h-full object-cover"
           />
         </div>
         <div>
           <p className="font-bold leading-tight" style={{ fontSize: 15, letterSpacing: "-0.3px" }}>
-            Shopisel
+            {brand.name}
           </p>
-          <p style={{ fontSize: 11, color: "#6B7280" }}>Smart Shopping</p>
+          <p style={{ fontSize: 11, color: "#6B7280" }}>{brand.sidebarTagline}</p>
         </div>
       </div>
 
