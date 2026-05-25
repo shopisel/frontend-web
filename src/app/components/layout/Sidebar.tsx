@@ -77,8 +77,8 @@ export function Sidebar({ onLogout }: SidebarProps) {
                       layoutId="sidebar-active"
                       className="absolute inset-0 rounded-xl"
                       style={{
-                        background: "linear-gradient(135deg, rgba(99,102,241,0.25) 0%, rgba(139,92,246,0.15) 100%)",
-                        border: "1px solid rgba(99,102,241,0.3)",
+                        background: brand.colors.activeBg,
+                        border: `1px solid ${brand.colors.activeBorder}`,
                       }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -92,7 +92,7 @@ export function Sidebar({ onLogout }: SidebarProps) {
                   <motion.div
                     layoutId="sidebar-bar"
                     className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full"
-                    style={{ background: "linear-gradient(to bottom, #6366F1, #8B5CF6)" }}
+                    style={{ background: brand.colors.activeBar }}
                     initial={{ opacity: 0, scaleY: 0 }}
                     animate={{ opacity: 1, scaleY: 1 }}
                     transition={{ type: "spring", damping: 20, stiffness: 300 }}
@@ -104,7 +104,7 @@ export function Sidebar({ onLogout }: SidebarProps) {
                     className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-150"
                     style={{
                       background: isActive
-                        ? "linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)"
+                        ? brand.colors.activeIcon
                         : "rgba(255,255,255,0.06)",
                     }}
                   >
