@@ -61,9 +61,9 @@ export function ListsScreen({ onNavigate }: { onNavigate?: (tab: string) => void
 
   // ...existing code...
   return (
-    <div className="flex flex-col h-full bg-[#F8F9FC]">
+    <div className="flex min-h-full flex-col bg-[#F8F9FC] overflow-x-hidden">
       <div className="bg-white">
-        <div className="max-w-6xl w-full px-5 lg:px-8 pt-6 pb-4">
+        <div className="max-w-6xl w-full px-5 lg:px-8 pt-5 sm:pt-6 pb-4">
           <div>
             <h1 className="text-gray-900 mb-1" style={{ fontSize: 24, fontWeight: 700 }}>
               Minhas Listas
@@ -76,7 +76,7 @@ export function ListsScreen({ onNavigate }: { onNavigate?: (tab: string) => void
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-6xl w-full px-5 lg:px-8 py-5">
+        <div className="max-w-6xl w-full px-5 lg:px-8 py-5 pb-28 md:pb-5">
           {isLoading && lists.length === 0 ? (
             <div className="bg-white rounded-3xl p-5" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
               <p className="text-gray-500" style={{ fontSize: 14 }}>
@@ -164,14 +164,14 @@ export function ListsScreen({ onNavigate }: { onNavigate?: (tab: string) => void
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none"
+          className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none p-4"
           onClick={() => setDeleteConfirm(null)}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="bg-white rounded-3xl p-6 w-80 flex flex-col gap-4 pointer-events-auto"
+            className="bg-white rounded-3xl p-6 w-full max-w-sm flex flex-col gap-4 pointer-events-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div>

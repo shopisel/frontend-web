@@ -137,13 +137,13 @@ export function ProfileScreen({
     .join("");
 
   return (
-    <div className="flex flex-col h-full bg-[#F8F9FC] overflow-y-auto">
+    <div className="flex min-h-full flex-col bg-[#F8F9FC] overflow-x-hidden">
       {/* Header */}
       <div className="px-5 pt-6 pb-6 bg-white">
         <h1 className="text-gray-900 mb-4" style={{ fontSize: 24, fontWeight: 700 }}>Perfil</h1>
 
         {/* User card */}
-        <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-indigo-600 to-violet-600 rounded-3xl">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-gradient-to-r from-indigo-600 to-violet-600 rounded-3xl">
           <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center">
             <span className="text-white" style={{ fontSize: 24, fontWeight: 700 }}>{initials || "U"}</span>
           </div>
@@ -161,12 +161,12 @@ export function ProfileScreen({
         </div>
 
         {/* Stats row */}
-        <div className="flex gap-3 mt-4">
+        <div className="grid grid-cols-3 gap-3 mt-4">
           {[
             { label: "Listas", value: String(listCount) },
             { label: "Poupado", value: `€${savings.toFixed(2)}` },
           ].map((stat) => (
-            <div key={stat.label} className="flex-1 bg-gray-50 rounded-2xl p-3 text-center">
+              <div key={stat.label} className="bg-gray-50 rounded-2xl p-3 text-center min-w-0">
               <p className="text-gray-900" style={{ fontSize: 18, fontWeight: 800 }}>{stat.value}</p>
               <p className="text-gray-400" style={{ fontSize: 12 }}>{stat.label}</p>
             </div>

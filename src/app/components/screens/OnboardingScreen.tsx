@@ -42,10 +42,10 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const Icon = slide.icon;
 
   return (
-    <div className="flex flex-col h-full bg-white overflow-hidden">
+    <div className="flex min-h-dvh flex-col bg-white overflow-y-auto overflow-x-hidden">
       
       {/* Image area */}
-      <div className="relative h-[60%] overflow-hidden">
+      <div className="relative h-[46vh] min-h-[220px] overflow-hidden shrink-0">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.img
             key={current}
@@ -75,12 +75,12 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center px-160 pt-1 pb-10">
+      <div className="flex flex-col items-center px-5 sm:px-8 md:px-12 py-8 sm:py-10 gap-5">
         
         {/* Icon */}
         <motion.div
           key={`icon-${current}`}
-          className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 shadow-lg"
+          className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
           style={{ backgroundColor: slide.color }}
           initial={{ scale: 0, rotate: -20 }}
           animate={{ scale: 1, rotate: 0 }}
@@ -109,7 +109,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         </AnimatePresence>
 
         {/* Dots */}
-        <div className="absolute bottom-32 left-1/2 -translate-x-1/2 flex gap-3 z-10">
+        <div className="flex gap-3 z-10 mt-2">
           {slides.map((_, i) => (
             <motion.button
               key={i}
@@ -130,7 +130,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
         {/* CTA */}
         <motion.button
-          className="mt-auto w-full py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg"
+          className="w-full py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg mt-2"
           style={{ backgroundColor: slide.color }}
           onClick={goNext}
           whileTap={{ scale: 0.97 }}

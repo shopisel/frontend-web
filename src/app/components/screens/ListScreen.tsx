@@ -313,10 +313,11 @@ const handleAddItem = async (addedItem: any) => {
   const checkedCount = items.filter(i => i.checked).length;
 
   return (
-    <div className="flex flex-col h-full bg-[#F8F9FC]">
+    <div className="flex min-h-full flex-col bg-[#F8F9FC] overflow-x-hidden">
       <div className="bg-white shadow-sm z-10 relative">
-        <div className="max-w-5xl mx-auto w-full px-5 lg:px-8 pt-6 pb-4">
-        <div className="flex items-center gap-3 mb-3">
+        <div className="max-w-5xl mx-auto w-full px-5 lg:px-8 pt-5 sm:pt-6 pb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center mb-3">
+            <div className="flex items-center gap-3 min-w-0">
           <button
             onClick={() => onNavigate ? onNavigate("lists") : navigate("/lists")}
             className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
@@ -340,23 +341,26 @@ const handleAddItem = async (addedItem: any) => {
                   setEditingName(true);
                   setNewName(listDetails?.name || "");
                 }}
-                className="text-gray-900 truncate hover:text-indigo-600 transition-colors"
+                className="text-gray-900 truncate hover:text-indigo-600 transition-colors text-left"
                 style={{ fontSize: 20, fontWeight: 700 }}
               >
                 {listDetails?.name || "Lista"}
               </button>
             )}
           </div>
-          <button
-            onClick={() => setDeleteConfirm(true)}
-            className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center hover:bg-red-100 transition-colors"
-          >
-            <Trash2 className="w-4 h-4 text-red-500" />
-          </button>
-          <button onClick={() => { if(listId) loadItems(listId); }} className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center">
-            <RefreshCw className={`w-4 h-4 text-indigo-600 ${isLoading ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
+            </div>
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <button
+                onClick={() => setDeleteConfirm(true)}
+                className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center hover:bg-red-100 transition-colors"
+              >
+                <Trash2 className="w-4 h-4 text-red-500" />
+              </button>
+              <button onClick={() => { if(listId) loadItems(listId); }} className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center">
+                <RefreshCw className={`w-4 h-4 text-indigo-600 ${isLoading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+          </div>
 
         <div className="flex items-center gap-3 mb-3">
           <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -371,18 +375,23 @@ const handleAddItem = async (addedItem: any) => {
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="flex-1 flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5">
             <Search className="w-4 h-4 text-gray-400" />
+<<<<<<< HEAD
             <input 
               placeholder="Pesquisar artigos..."
+=======
+            <input
+              placeholder="Search items..."
+>>>>>>> b2310f099da94959901484d6a93d1a793db314dd
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="flex-1 bg-transparent outline-none text-gray-700" 
-              style={{ fontSize: 13 }} 
+              className="flex-1 bg-transparent outline-none text-gray-700"
+              style={{ fontSize: 13 }}
             />
           </div>
-          <div className="bg-indigo-50 rounded-xl px-3 py-2.5">
+          <div className="bg-indigo-50 rounded-xl px-3 py-2.5 self-start sm:self-auto">
             <span style={{ fontSize: 13, fontWeight: 700, color: "#6366F1" }}>€{total.toFixed(2)}</span>
           </div>
           <motion.button
@@ -400,7 +409,7 @@ const handleAddItem = async (addedItem: any) => {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto w-full px-5 lg:px-8 py-4">
+        <div className="max-w-5xl mx-auto w-full px-5 lg:px-8 py-4 pb-28 md:pb-4">
         {isLoading && items.length === 0 ? (
           <div className="bg-white rounded-2xl p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
             <p className="text-gray-500 text-center" style={{ fontSize: 13 }}>A carregar itens e dependencias...</p>
@@ -421,7 +430,7 @@ const handleAddItem = async (addedItem: any) => {
                   containIntrinsicSize: "84px",
                 }}
               >
-                <div className="flex items-center gap-3 px-4 py-3.5 relative">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3.5 relative">
                   <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {item.imageSrc ? (
                       <img
@@ -486,7 +495,7 @@ const handleAddItem = async (addedItem: any) => {
                 </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
                     <div className="flex flex-col items-end leading-tight">
                       <span style={{ fontSize: 14, fontWeight: 700, color: item.checked ? "#9CA3AF" : "#10B981" }}>
                         €{(item.unitPrice * item.quantity).toFixed(2)}
@@ -559,7 +568,7 @@ const handleAddItem = async (addedItem: any) => {
         </div>
       </div>
 
-      <div className="fixed bottom-6 right-6 md:hidden">
+      <div className="fixed bottom-24 right-6 md:hidden">
         <motion.button
           whileTap={{ scale: 0.92 }}
           onClick={() => setShowAddModal(true)}
@@ -581,7 +590,7 @@ const handleAddItem = async (addedItem: any) => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="bg-white rounded-3xl p-6 w-80 flex flex-col gap-4 pointer-events-auto"
+            className="bg-white rounded-3xl p-6 w-full max-w-sm flex flex-col gap-4 pointer-events-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div>

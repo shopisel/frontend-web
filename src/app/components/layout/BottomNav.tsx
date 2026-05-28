@@ -1,14 +1,21 @@
 import { motion } from "motion/react";
-import { Home, List, ScanLine, BarChart2, User } from "lucide-react";
+import { Home, List, BarChart2, User } from "lucide-react";
 
-export type AppTab = "home" | "lists" | "scan" | "prices" | "profile";
+export type AppTab = "home" | "lists" | "prices" | "profile";
 
 const tabs: { id: AppTab; label: string; icon: typeof Home }[] = [
+<<<<<<< HEAD
   { id: "home", label: "Início", icon: Home },
   { id: "lists", label: "Listas", icon: List },
   { id: "scan", label: "Scanner", icon: ScanLine },
   { id: "prices", label: "Preços", icon: BarChart2 },
   { id: "profile", label: "Perfil", icon: User },
+=======
+  { id: "home", label: "Home", icon: Home },
+  { id: "lists", label: "Lists", icon: List },
+  { id: "prices", label: "Prices", icon: BarChart2 },
+  { id: "profile", label: "Profile", icon: User },
+>>>>>>> b2310f099da94959901484d6a93d1a793db314dd
 ];
 
 interface BottomNavProps {
@@ -19,13 +26,12 @@ interface BottomNavProps {
 export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   return (
     <div
-      className="flex items-stretch bg-white border-t border-gray-100 px-2 py-2 pb-3"
-      style={{ boxShadow: "0 -4px 20px rgba(0,0,0,0.06)" }}
+      className="flex items-stretch bg-white/95 backdrop-blur border-t border-gray-100 px-2 pt-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+      style={{ boxShadow: "0 -4px 20px rgba(0,0,0,0.08)" }}
     >
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
-        const isScan = tab.id === "scan";
 
         return (
           <button
@@ -33,57 +39,32 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
             onClick={() => onTabChange(tab.id)}
             className="flex-1 flex flex-col items-center justify-center gap-1 relative"
           >
-            {/* Scan tab - special styling */}
-            {isScan ? (
-              <div className="relative -mt-6">
+            <div className="relative flex flex-col items-center gap-1 w-full py-1">
+              {/* Active indicator pill */}
+              {isActive && (
                 <motion.div
-                  className="w-14 h-14 rounded-[18px] flex items-center justify-center shadow-xl"
-                  animate={{ backgroundColor: isActive ? "#4F46E5" : "#6366F1" }}
-                  whileTap={{ scale: 0.92 }}
-                >
-                  <Icon className="w-6 h-6 text-white" strokeWidth={2} />
-                </motion.div>
+                  layoutId="nav-indicator"
+                  className="absolute -top-1.5 w-8 h-1 rounded-full bg-indigo-600"
+                  transition={{ type: "spring", damping: 20, stiffness: 300 }}
+                />
+              )}
+              <div className="relative">
+                <Icon
+                  className="w-6 h-6 transition-colors"
+                  style={{ color: isActive ? "#6366F1" : "#9CA3AF" }}
+                  strokeWidth={isActive ? 2.2 : 1.8}
+                />
               </div>
-            ) : (
-              <div className="relative flex flex-col items-center gap-1 w-full py-1">
-                {/* Active indicator pill */}
-                {isActive && (
-                  <motion.div
-                    layoutId="nav-indicator"
-                    className="absolute -top-1.5 w-8 h-1 rounded-full bg-indigo-600"
-                    transition={{ type: "spring", damping: 20, stiffness: 300 }}
-                  />
-                )}
-                <div className="relative">
-                  <Icon
-                    className="w-6 h-6 transition-colors"
-                    style={{ color: isActive ? "#6366F1" : "#9CA3AF" }}
-                    strokeWidth={isActive ? 2.2 : 1.8}
-                  />
-                </div>
-                <span
-                  style={{
-                    fontSize: 10,
-                    fontWeight: isActive ? 700 : 500,
-                    color: isActive ? "#6366F1" : "#9CA3AF",
-                  }}
-                >
-                  {tab.label}
-                </span>
-              </div>
-            )}
-
-            {/* Label for scan */}
-            {isScan && (
               <span
                 style={{
-                  fontSize: 10, fontWeight: 600,
+                  fontSize: 10,
+                  fontWeight: isActive ? 700 : 500,
                   color: isActive ? "#6366F1" : "#9CA3AF",
                 }}
               >
                 {tab.label}
               </span>
-            )}
+            </div>
           </button>
         );
       })}

@@ -366,7 +366,7 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#F8F9FC]">
+    <div className="flex min-h-full flex-col bg-[#F8F9FC] overflow-x-hidden">
       {/* Header */}
       <div className="px-5 pt-12 pb-4 bg-white">
         <h1 className="text-gray-900 mb-1" style={{ fontSize: 24, fontWeight: 700 }}>

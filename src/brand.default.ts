@@ -1,14 +1,8 @@
-<<<<<<< HEAD
-export const brand = {
-  name: "Shopisel",
-  tagline: "Compra melhor, poupa mais",
-=======
-﻿export const brand = {
+export const defaultBrand = {
   name: "SmartCart",
   tagline: "Shop smarter, save more",
->>>>>>> b2310f099da94959901484d6a93d1a793db314dd
   logoUrl: "/shopisel.png",
-  sidebarTagline: "Compras inteligentes",
+  sidebarTagline: "Smart Shopping",
   colors: {
     primary: "#6366F1",
     secondary: "#8B5CF6",
@@ -19,5 +13,4 @@ export const brand = {
     activeIcon: "linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)",
   },
 } as const;
-
 
