@@ -375,7 +375,7 @@ const handleAddItem = async (addedItem: any) => {
           <div className="flex-1 flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5">
             <Search className="w-4 h-4 text-gray-400" />
             <input 
-              placeholder="Search items..." 
+              placeholder="Pesquisar artigos..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="flex-1 bg-transparent outline-none text-gray-700" 
@@ -393,7 +393,7 @@ const handleAddItem = async (addedItem: any) => {
             type="button"
           >
             <Plus className="w-4 h-4 text-white" />
-            Add item
+            Adicionar artigo
           </motion.button>
         </div>
         </div>

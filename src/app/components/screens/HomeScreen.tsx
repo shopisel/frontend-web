@@ -89,6 +89,7 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
   const [isLoadingLatestList, setIsLoadingLatestList] = useState(false);
   const [isLoadingFavoriteDeals, setIsLoadingFavoriteDeals] = useState(false);
   const [isLoadingRelatedProducts, setIsLoadingRelatedProducts] = useState(false);
+  const [savings, setSavings] = useState(0);
   const [togglePendingId, setTogglePendingId] = useState<number | null>(null);
   const [addPendingProductId, setAddPendingProductId] = useState<string | null>(null);
 
@@ -108,6 +109,35 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
           0
         );
         setTotalListItems(totalItems);
+
+        const allItems: { productId: string; storeId: string; quantity: number }[] = [];
+        for (const list of lists) {
+          for (const item of list.items ?? []) {
+            allItems.push({ productId: item.productId, storeId: item.storeId, quantity: item.quantity });
+          }
+        }
+        const uniquePairs = new Map<string, { productId: string; storeId: string }>();
+        for (const item of allItems) {
+          const key = `${item.productId}:${item.storeId}`;
+          if (!uniquePairs.has(key)) uniquePairs.set(key, { productId: item.productId, storeId: item.storeId });
+        }
+        const priceMap = new Map<string, { price: number; sale?: number }>();
+        await Promise.all(
+          Array.from(uniquePairs.values()).map(async ({ productId, storeId }) => {
+            try {
+              const prices = await getPrices(productId, storeId);
+              if (prices.length > 0) priceMap.set(`${productId}:${storeId}`, { price: prices[0].price, sale: prices[0].sale });
+            } catch {}
+          })
+        );
+        let totalSavings = 0;
+        for (const item of allItems) {
+          const p = priceMap.get(`${item.productId}:${item.storeId}`);
+          if (p?.sale != null && p.sale > 0 && p.sale < p.price) {
+            totalSavings += (p.price - p.sale) * item.quantity;
+          }
+        }
+        setSavings(totalSavings);
 
         const sortedLists = [...lists].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         const latest = sortedLists[0];
@@ -172,10 +202,10 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
             const pricing = priceByItemKey.get(`${item.productId}::${item.storeId}`);
             return {
               ...item,
-              name: product?.name || "Unknown Product",
+              name: product?.name || "Produto desconhecido",
               emoji: (product as any)?.emoji || "📦",
               imageSrc: product ? getProductImageSrc(product) : undefined,
-              store: store?.name || "Unknown Store",
+              store: store?.name || "Loja desconhecida",
               color: colors[idx % colors.length],
               qty: `${item.quantity}x`,
               unitPrice: pricing?.unitPrice ?? 0,
@@ -191,12 +221,14 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
         setLatestList(null);
         setTotalListItems(0);
         setMyListItems([]);
+        setSavings(0);
       }
     } catch (error) {
       console.error(error);
       setLatestList(null);
       setTotalListItems(0);
       setMyListItems([]);
+      setSavings(0);
     } finally {
       setIsLoadingLatestList(false);
     }
@@ -395,8 +427,8 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
   };
 
   const summaryStats = [
-    { label: "Items", value: String(totalListItems), icon: ShoppingBag, color: "#6366F1", bg: "#EEF2FF" },
-    { label: "Saved", value: "€0", icon: TrendingDown, color: "#10B981", bg: "#ECFDF5" },
+    { label: "Artigos", value: String(totalListItems), icon: ShoppingBag, color: "#6366F1", bg: "#EEF2FF" },
+    { label: "Poupado", value: `€${savings.toFixed(2)}`, icon: TrendingDown, color: "#10B981", bg: "#ECFDF5" },
   ];
 
   return (
@@ -405,9 +437,9 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
       <div className="px-5 pt-6 pb-5 bg-white">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-gray-400" style={{ fontSize: 13 }}>Good morning 👋</p>
+            <p className="text-gray-400" style={{ fontSize: 13 }}>Bom dia 👋</p>
             <h1 className="text-gray-900" style={{ fontSize: 22, fontWeight: 700 }}>
-              {user?.name ? `Welcome back, ${user.name}!` : "Welcome to ShopSmart!"}
+              {user?.name ? `Bem-vindo de volta, ${user.name}!` : "Bem-vindo ao Shopisel!"}
             </h1>
           </div>
           <div className="flex items-center gap-3">
@@ -431,7 +463,7 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
             <input
               value={quickAdd}
               onChange={(e) => setQuickAdd(e.target.value)}
-              placeholder="Quick add to list..."
+              placeholder="Adicionar rapidamente à lista..."
               className="flex-1 bg-transparent outline-none text-gray-700"
               style={{ fontSize: 14 }}
             />
@@ -479,7 +511,7 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
         <div className="px-5 mb-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-gray-900" style={{ fontSize: 16, fontWeight: 700 }}>
-              {latestList ? latestList.name : "My List"}
+              {latestList ? latestList.name : "A minha lista"}
             </h3>
             <button
               onClick={() => {
@@ -489,7 +521,7 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
               className="flex items-center gap-1"
               style={{ fontSize: 13, color: "#6366F1", fontWeight: 600 }}
             >
-              See all <ChevronRight className="w-4 h-4" />
+              Ver tudo <ChevronRight className="w-4 h-4" />
             </button>
           </div>
           <div className="bg-white rounded-3xl overflow-hidden shadow-sm" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
@@ -588,7 +620,7 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
               className="flex items-center gap-1"
               style={{ fontSize: 13, color: "#6366F1", fontWeight: 600 }}
             >
-              See all <ChevronRight className="w-4 h-4" />
+              Ver tudo <ChevronRight className="w-4 h-4" />
             </button>
           </div>
           <div className="flex gap-3 px-5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
@@ -679,7 +711,7 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
               className="flex items-center gap-1"
               style={{ fontSize: 13, color: "#6366F1", fontWeight: 600 }}
             >
-              See all <ChevronRight className="w-4 h-4" />
+              Ver tudo <ChevronRight className="w-4 h-4" />
             </button>
           </div>
           <div className="flex gap-3 px-5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>

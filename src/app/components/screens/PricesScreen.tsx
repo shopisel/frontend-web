@@ -50,8 +50,6 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
   const [subCategories, setSubCategories] = useState<Category[]>([]);
   const [selectedMainCat, setSelectedMainCat] = useState<Category | null>(null);
   const [selectedSubCat, setSelectedSubCat] = useState<Category | null>(null);
-  const [showRelatedOnly, setShowRelatedOnly] = useState(false);
-
   const [products, setProducts] = useState<Product[]>([]);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -88,7 +86,6 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     if (value.trim()) {
-      setShowRelatedOnly(false);
       resetCategorySelection();
       resetProductSelection();
     }
@@ -96,15 +93,7 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
 
   const handleSelectMainCategory = (cat: Category | null) => {
     if (searchQuery.trim()) setSearchQuery("");
-    setShowRelatedOnly(false);
     setSelectedMainCat(cat);
-  };
-
-  const handleSelectRelatedCategory = () => {
-    if (searchQuery.trim()) setSearchQuery("");
-    setShowRelatedOnly(true);
-    resetCategorySelection();
-    resetProductSelection();
   };
 
   const handleSelectSubCategory = (cat: Category) => {
@@ -231,47 +220,34 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
   }, [selectedSubCat, searchQuery, getProductsByCategory]);
 
   useEffect(() => {
+    if (!selectedProduct) {
+      setRelatedProducts([]);
+      return;
+    }
+
     let cancelled = false;
 
-    const loadRelatedProducts = async () => {
-      if (!favoriteProductIds.length) {
-        setRelatedProducts([]);
-        return;
-      }
-
+    const loadRelated = async () => {
       setIsLoadingRelatedProducts(true);
-      setError(null);
       try {
-        const data = await getRelatedProductsByFavoriteIds(favoriteProductIds, 50);
+        const data = await getRelatedProductsByFavoriteIds([selectedProduct.id], 6);
         if (cancelled) return;
-        setRelatedProducts(data || []);
-      } catch (e) {
-        if (cancelled) return;
-        setError(e instanceof Error ? e.message : "Failed to load related products");
-        setRelatedProducts([]);
+        setRelatedProducts((data || []).filter((p) => p.id !== selectedProduct.id));
+      } catch {
+        if (!cancelled) setRelatedProducts([]);
       } finally {
         if (!cancelled) setIsLoadingRelatedProducts(false);
       }
     };
 
-    loadRelatedProducts();
+    void loadRelated();
     return () => {
       cancelled = true;
     };
-  }, [favoriteProductIds, getRelatedProductsByFavoriteIds]);
-
-  useEffect(() => {
-    if (searchQuery.trim() || !showRelatedOnly) return;
-
-    setProducts(relatedProducts);
-    setSelectedProduct(null);
-    setStoreRows([]);
-    setHasMoreProducts(false);
-  }, [showRelatedOnly, searchQuery, relatedProducts]);
+  }, [selectedProduct, getRelatedProductsByFavoriteIds]);
 
   const loadMoreProducts = async () => {
     if (isLoadingProducts || isLoadingMoreProducts || !hasMoreProducts) return;
-    if (showRelatedOnly) return;
 
     const query = searchQuery.trim();
     const currentSkip = products.length;
@@ -363,10 +339,16 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
     });
   }, [storeRows, sortBy]);
 
-  const savings = useMemo(() => {
-    if (sortedStores.length < 2) return 0;
-    return sortedStores[sortedStores.length - 1].price - sortedStores[0].price;
-  }, [sortedStores]);
+  const maxPromoSaving = useMemo(() => {
+    let max = 0;
+    for (const store of storeRows) {
+      if (typeof store.sale === "number" && store.sale > 0 && store.sale < store.originalPrice) {
+        const saving = store.originalPrice - store.sale;
+        if (saving > max) max = saving;
+      }
+    }
+    return max;
+  }, [storeRows]);
 
   const selectedProductFavorite = selectedProduct ? favoriteProductIds.includes(selectedProduct.id) : false;
   const selectedUnitPriceText = useMemo(() => {
@@ -388,10 +370,10 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
       {/* Header */}
       <div className="px-5 pt-12 pb-4 bg-white">
         <h1 className="text-gray-900 mb-1" style={{ fontSize: 24, fontWeight: 700 }}>
-          Price Compare
+          Comparar Preços
         </h1>
         <p className="text-gray-400 mb-4" style={{ fontSize: 14 }}>
-          Find the best deals nearby
+          Encontra as melhores ofertas perto de ti
         </p>
 
         <div className="flex items-center gap-2 bg-gray-50 rounded-2xl px-4 py-3">
@@ -399,7 +381,7 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
           <input
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="Search any product..."
+            placeholder="Pesquisar produto..."
             className="flex-1 bg-transparent outline-none text-gray-700"
             style={{ fontSize: 14 }}
           />
@@ -414,33 +396,19 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
             onClick={() => handleSelectMainCategory(null)}
             className="flex-shrink-0 px-4 py-2 rounded-xl"
             animate={{
-              backgroundColor: selectedMainCat === null && !showRelatedOnly ? "#6366F1" : "#F3F4F6",
-              color: selectedMainCat === null && !showRelatedOnly ? "#FFFFFF" : "#6B7280",
+              backgroundColor: selectedMainCat === null ? "#6366F1" : "#F3F4F6",
+              color: selectedMainCat === null ? "#FFFFFF" : "#6B7280",
             }}
             transition={{ duration: 0.2 }}
             style={{ fontSize: 13, fontWeight: 600 }}
           >
-            All
-          </motion.button>
-
-          <motion.button
-            key="__related__"
-            onClick={handleSelectRelatedCategory}
-            className="flex-shrink-0 px-4 py-2 rounded-xl"
-            animate={{
-              backgroundColor: showRelatedOnly ? "#6366F1" : "#F3F4F6",
-              color: showRelatedOnly ? "#FFFFFF" : "#6B7280",
-            }}
-            transition={{ duration: 0.2 }}
-            style={{ fontSize: 13, fontWeight: 600 }}
-          >
-            Relacionados
+            Todos
           </motion.button>
 
           {isLoadingCats ? (
             <div className="flex items-center gap-2 px-2 text-gray-400">
               <Loader className="w-4 h-4 animate-spin" />
-              <span style={{ fontSize: 13, fontWeight: 600 }}>Loading</span>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>A carregar</span>
             </div>
           ) : (
             mainCategories.map((cat) => (
@@ -469,7 +437,7 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
             {isLoadingSubCats ? (
               <div className="flex items-center gap-2 px-2 text-gray-400">
                 <Loader className="w-4 h-4 animate-spin" />
-                <span style={{ fontSize: 13, fontWeight: 600 }}>Loading</span>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>A carregar</span>
               </div>
             ) : subCategories.length > 0 ? (
               subCategories.map((subCat) => (
@@ -489,7 +457,7 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
               ))
             ) : (
               <div className="text-gray-400" style={{ fontSize: 13, fontWeight: 600 }}>
-                No subcategories
+                Sem subcategorias
               </div>
             )}
           </div>
@@ -504,7 +472,7 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
             className="text-gray-500 mb-3"
             style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}
           >
-            SELECT PRODUCT
+            SELECIONAR PRODUTO
           </p>
 
           {error && (
@@ -513,12 +481,10 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
             </div>
           )}
 
-          {isLoadingProducts || (showRelatedOnly && isLoadingRelatedProducts) ? (
+          {isLoadingProducts ? (
             <div className="flex items-center gap-2 text-gray-400">
               <Loader className="w-4 h-4 animate-spin" />
-              <span style={{ fontSize: 13, fontWeight: 600 }}>
-                {showRelatedOnly ? "Loading related products" : "Loading products"}
-              </span>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>A carregar produtos</span>
             </div>
           ) : products.length > 0 ? (
             <div
@@ -583,7 +549,7 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
                     </motion.button>
                     );
                 })}
-                {(hasMoreProducts || isLoadingMoreProducts) && !showRelatedOnly && (
+                {(hasMoreProducts || isLoadingMoreProducts) && (
                   <div className="col-span-full pt-1">
                     <motion.button
                       onClick={() => void loadMoreProducts()}
@@ -615,12 +581,10 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
           ) : (
             <div className="text-gray-400" style={{ fontSize: 13, fontWeight: 600 }}>
               {searchQuery.trim()
-                ? "No products found"
-                : showRelatedOnly
-                  ? "No related products for your favorites"
+                ? "Nenhum produto encontrado"
                 : selectedMainCat && !selectedSubCat
-                  ? "Select a subcategory to see products"
-                  : "No products to show"}
+                  ? "Seleciona uma subcategoria para ver produtos"
+                  : "Nenhum produto para mostrar"}
             </div>
           )}
         </div>
@@ -649,7 +613,7 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
                 </div>
                 <div className="flex-1">
                   <p className="text-indigo-200" style={{ fontSize: 12 }}>
-                    {showRelatedOnly ? "Relacionados" : (selectedSubCat?.name || selectedMainCat?.name || "All products")}
+                    {selectedSubCat?.name || selectedMainCat?.name || "All products"}
                   </p>
                   <p className="text-white" style={{ fontSize: 16, fontWeight: 700 }}>
                     {selectedProduct.name}
@@ -682,7 +646,7 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
               <div className="flex items-center justify-between mt-4">
                 <div>
                   <p className="text-indigo-200" style={{ fontSize: 11 }}>
-                    Best price
+                    Melhor preço
                   </p>
                   <p className="text-white" style={{ fontSize: 26, fontWeight: 800 }}>
                     {sortedStores[0] ? `€${sortedStores[0].price.toFixed(2)}` : "—"}
@@ -690,24 +654,88 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
                 </div>
                 <div className="text-right">
                   <p className="text-indigo-200" style={{ fontSize: 11 }}>
-                    Max savings
+                    Poupança máxima
                   </p>
                   <div className="flex items-center gap-1 justify-end">
                     <Tag className="w-4 h-4 text-green-300" />
                     <p className="text-green-300" style={{ fontSize: 18, fontWeight: 700 }}>
-                      {sortedStores.length >= 2 ? `€${savings.toFixed(2)} off` : "—"}
+                      {maxPromoSaving > 0 ? `€${maxPromoSaving.toFixed(2)} de desconto` : "—"}
                     </p>
                   </div>
                 </div>
+              </div>
+
+              {/* Related products */}
+              <div className="mt-5">
+                <p
+                  className="mb-2"
+                  style={{ fontSize: 12, fontWeight: 700, color: "#E0E7FF", textTransform: "uppercase", letterSpacing: 0.5 }}
+                >
+                  Produtos Relacionados
+                </p>
+                {isLoadingRelatedProducts ? (
+                  <div className="flex items-center gap-2">
+                    <Loader className="w-4 h-4 animate-spin" style={{ color: "#E0E7FF" }} />
+                    <span style={{ fontSize: 12, color: "#E0E7FF" }}>A carregar...</span>
+                  </div>
+                ) : relatedProducts.length > 0 ? (
+                  <div className="flex gap-2.5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+                    {relatedProducts.map((rp) => {
+                      const rpImgSrc = getProductImageSrc(rp);
+                      return (
+                        <button
+                          key={rp.id}
+                          type="button"
+                          onClick={() => {
+                            setProducts((prev) => {
+                              if (prev.some((p) => p.id === rp.id)) return prev;
+                              return [rp, ...prev];
+                            });
+                            setSelectedProduct(rp);
+                          }}
+                          className="flex-shrink-0 rounded-xl p-2.5 text-left"
+                          style={{ width: 108, backgroundColor: "rgba(255,255,255,0.12)" }}
+                        >
+                          <div
+                            className="h-16 rounded-lg overflow-hidden flex items-center justify-center mb-2"
+                            style={{ backgroundColor: "rgba(255,255,255,0.18)" }}
+                          >
+                            {rpImgSrc ? (
+                              <ImageWithFallback src={rpImgSrc} alt={rp.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <span style={{ fontSize: 20 }}>{rp.emoji || "📦"}</span>
+                            )}
+                          </div>
+                          <p
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: "white",
+                              lineHeight: "16px",
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {rp.name}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p style={{ fontSize: 12, color: "#E0E7FF" }}>Sem produtos relacionados</p>
+                )}
               </div>
             </motion.div>
           ) : (
             <div className="bg-white rounded-3xl p-5" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
               <p className="text-gray-700" style={{ fontSize: 14, fontWeight: 700 }}>
-                No product selected
+                Nenhum produto selecionado
               </p>
               <p className="text-gray-400 mt-1" style={{ fontSize: 12 }}>
-                Pick a product to compare prices.
+                Escolhe um produto para comparar preços.
               </p>
             </div>
           )}
@@ -717,7 +745,7 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
         <div className="px-5 mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <p className="text-gray-700" style={{ fontSize: 14, fontWeight: 700 }}>
-              Stores ({sortedStores.length})
+              Lojas ({sortedStores.length})
             </p>
             {isLoadingStores && <Loader className="w-4 h-4 text-gray-400 animate-spin" />}
           </div>
@@ -728,7 +756,7 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
             >
               <ArrowUpDown className="w-3.5 h-3.5 text-gray-500" />
               <span className="text-gray-600" style={{ fontSize: 12, fontWeight: 600 }}>
-                {sortBy === "price" ? "Price" : "Distance"}
+                {sortBy === "price" ? "Preço" : "Distância"}
               </span>
             </button>
             <button
@@ -737,7 +765,7 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
               style={{ backgroundColor: mapView ? "#6366F1" : "#F3F4F6" }}
             >
               <MapPin className="w-3.5 h-3.5" style={{ color: mapView ? "white" : "#6B7280" }} />
-              <span style={{ fontSize: 12, fontWeight: 600, color: mapView ? "white" : "#6B7280" }}>Map</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: mapView ? "white" : "#6B7280" }}>Mapa</span>
             </button>
           </div>
         </div>
@@ -813,7 +841,7 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
         <div className="px-5 pb-6 flex flex-col gap-3">
           {sortedStores.length === 0 && (
             <div className="text-gray-400" style={{ fontSize: 13, fontWeight: 600 }}>
-              {selectedProduct ? "No prices found for this product" : "Select a product to see prices"}
+              {selectedProduct ? "Nenhum preço encontrado para este produto" : "Seleciona um produto para ver preços"}
             </div>
           )}
           <AnimatePresence>
@@ -881,7 +909,7 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
                     )}
                     {i > 0 && sortedStores[0] && (
                       <p className="text-red-400" style={{ fontSize: 11 }}>
-                        +€{(store.price - sortedStores[0].price).toFixed(2)} more
+                        +€{(store.price - sortedStores[0].price).toFixed(2)} a mais
                       </p>
                     )}
                   </div>

@@ -107,7 +107,7 @@ export function ListsScreen({ onNavigate }: { onNavigate?: (tab: string) => void
                             {list.name}
                           </p>
                           <p className="text-gray-400" style={{ fontSize: 12 }}>
-                            {list.items?.length || 0} items
+                            {list.items?.length || 0} artigos
                           </p>
                         </div>
                       </div>

@@ -6,7 +6,7 @@ import {
 import { brand } from "../../../brand.config";
 
 const navItems = [
-  { to: "/",        label: "Home",    icon: Home,      exact: true  },
+  { to: "/",        label: "Início",  icon: Home,      exact: true  },
   { to: "/lists",   label: "Listas",  icon: List,      exact: false },
   { to: "/prices",  label: "Preços",  icon: BarChart2, exact: false },
   { to: "/profile", label: "Perfil",  icon: User,      exact: false },
