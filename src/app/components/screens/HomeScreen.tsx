@@ -425,7 +425,7 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
         </div>
 
         {/* Quick add */}
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <div className="flex-1 flex items-center gap-3 bg-gray-50 rounded-2xl px-4 py-3">
             <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
             <input
@@ -456,13 +456,13 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
         )}
 
         {/* Summary stats */}
-        <div className="px-5 py-4 flex gap-3">
+        <div className="px-5 py-4 grid grid-cols-2 gap-3 sm:flex">
           {summaryStats.map((stat) => {
             const Icon = stat.icon;
             return (
               <div
                 key={stat.label}
-                className="flex-1 rounded-2xl p-3 flex flex-col gap-1"
+                className="rounded-2xl p-3 flex flex-col gap-1 min-w-0 sm:flex-1"
                 style={{ backgroundColor: stat.bg }}
               >
                 <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: stat.color + "22" }}>
@@ -477,7 +477,7 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
 
         {/* Shopping list preview */}
         <div className="px-5 mb-4">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
             <h3 className="text-gray-900" style={{ fontSize: 16, fontWeight: 700 }}>
               {latestList ? latestList.name : "My List"}
             </h3>
@@ -501,7 +501,7 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
               myListItems.map((item, idx) => (
                 <motion.div
                   key={item.id}
-                  className="flex items-center gap-3 px-4 py-3.5"
+                  className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3.5"
                   style={{ borderBottom: idx < myListItems.length - 1 ? "1px solid #F3F4F6" : "none" }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -536,7 +536,7 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
                       {item.qty} · {item.store}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
                     <div className="flex flex-col items-end leading-tight">
                       <span style={{ fontSize: 14, fontWeight: 700, color: item.checked ? "#9CA3AF" : "#10B981" }}>
                         €{(item.unitPrice * item.quantity).toFixed(2)}
@@ -581,7 +581,7 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
 
         {/* Favorite products on sale */}
         <div className="mb-4">
-          <div className="px-5 flex items-center justify-between mb-3">
+          <div className="px-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
             <h3 className="text-gray-900" style={{ fontSize: 16, fontWeight: 700 }}>Favoritos em desconto</h3>
             <button
               onClick={() => navigate("/profile/favorites")}
@@ -600,7 +600,7 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
             {favoriteDeals.map((deal) => (
               <motion.div
                 key={deal.id}
-                className="rounded-3xl p-4 flex-shrink-0 w-44 relative overflow-hidden cursor-pointer"
+                className="rounded-3xl p-4 flex-shrink-0 w-40 sm:w-44 relative overflow-hidden cursor-pointer"
                 style={{ backgroundColor: deal.color, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}
                 whileTap={{ scale: 0.96 }}
                 whileHover={{ y: -2 }}
@@ -672,7 +672,7 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
 
         {/* Related to favorites */}
         <div className="mb-4">
-          <div className="px-5 flex items-center justify-between mb-3">
+          <div className="px-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
             <h3 className="text-gray-900" style={{ fontSize: 16, fontWeight: 700 }}>Relacionados com os favoritos</h3>
             <button
               onClick={() => onNavigate("prices")}
