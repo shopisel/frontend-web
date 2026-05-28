@@ -314,7 +314,7 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-3 sm:p-4"
       onClick={handleClose}
     >
       <motion.div
@@ -322,11 +322,11 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 24, scale: 0.98 }}
         transition={{ duration: 0.2 }}
-        className="w-full sm:max-w-3xl bg-white rounded-3xl flex flex-col max-h-[85vh]"
+        className="w-full sm:max-w-3xl bg-white rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[90dvh]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100 flex-shrink-0">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between px-4 sm:px-5 pt-5 pb-4 border-b border-gray-100 flex-shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
             {(selectedCategory || selectedSubCategory || selectedProduct) && (
               <button
                 onClick={() => {
@@ -339,8 +339,8 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                 <ChevronLeft className="w-4 h-4 text-gray-500" />
               </button>
             )}
-            <div>
-              <h2 className="text-gray-900" style={{ fontSize: 18, fontWeight: 700 }}>
+            <div className="min-w-0">
+              <h2 className="text-gray-900 truncate" style={{ fontSize: 18, fontWeight: 700 }}>
                 {selectedProduct
                   ? "Escolher Loja"
                   : selectedSubCategory
@@ -364,7 +364,7 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5">
           {selectedProduct ? (
             <AnimatePresence mode="wait">
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>

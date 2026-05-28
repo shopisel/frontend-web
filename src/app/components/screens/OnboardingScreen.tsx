@@ -75,7 +75,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center px-160 pt-1 pb-10">
+      <div className="flex-1 flex flex-col items-center px-5 sm:px-8 md:px-12 pt-1 pb-10">
         
         {/* Icon */}
         <motion.div

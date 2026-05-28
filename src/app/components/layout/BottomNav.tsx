@@ -19,8 +19,8 @@ interface BottomNavProps {
 export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   return (
     <div
-      className="flex items-stretch bg-white border-t border-gray-100 px-2 py-2 pb-3"
-      style={{ boxShadow: "0 -4px 20px rgba(0,0,0,0.06)" }}
+      className="flex items-stretch bg-white/95 backdrop-blur border-t border-gray-100 px-2 pt-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+      style={{ boxShadow: "0 -4px 20px rgba(0,0,0,0.08)" }}
     >
       {tabs.map((tab) => {
         const Icon = tab.icon;

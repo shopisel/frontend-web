@@ -21,7 +21,7 @@ export function Sidebar({ onLogout }: SidebarProps) {
 
   return (
     <aside
-      className="flex flex-col h-screen bg-[#0F1225] text-white flex-shrink-0"
+      className="hidden md:flex flex-col h-dvh bg-[#0F1225] text-white flex-shrink-0"
       style={{ width: 230, borderRight: "1px solid rgba(255,255,255,0.06)" }}
     >
       {/* Logo */}

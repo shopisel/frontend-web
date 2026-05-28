@@ -1,4 +1,4 @@
-﻿export const brand = {
+export const defaultBrand = {
   name: "SmartCart",
   tagline: "Shop smarter, save more",
   logoUrl: "/shopisel.png",
@@ -13,5 +13,4 @@
     activeIcon: "linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)",
   },
 } as const;
-
 

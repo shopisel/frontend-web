@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { SplashScreen } from "./components/screens/SplashScreen";
 import { OnboardingScreen } from "./components/screens/OnboardingScreen";
 import { HomeScreen } from "./components/screens/HomeScreen";
@@ -9,6 +9,7 @@ import { ListScreen } from "./components/screens/ListScreen";
 import { PricesScreen } from "./components/screens/PricesScreen";
 import { ProfileScreen } from "./components/screens/ProfileScreen";
 import { Sidebar } from "./components/layout/Sidebar";
+import { BottomNav, type AppTab } from "./components/layout/BottomNav";
 import { useAuth } from "../auth/AuthProvider";
 import { useAccounts } from "../api/useAccounts";
 import { useProducts, type Product } from "../api/useProducts";
@@ -41,6 +42,15 @@ function AppLayout({
   onReloadFavorites: () => Promise<void>;
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const activeTab: AppTab = location.pathname.startsWith("/lists")
+    ? "lists"
+    : location.pathname.startsWith("/prices")
+      ? "prices"
+      : location.pathname.startsWith("/profile")
+        ? "profile"
+        : "home";
 
   const handleNavigate = useCallback(
     (tab: string) => {
@@ -56,10 +66,10 @@ function AppLayout({
   );
 
   return (
-    <div className="flex h-screen bg-[#F8F9FC] overflow-hidden">
+    <div className="flex min-h-dvh bg-[#F8F9FC] overflow-hidden">
       <Sidebar onLogout={onLogout} />
 
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden pb-24 md:pb-0">
         <AnimatePresence mode="wait">
           <Routes>
             <Route
@@ -138,6 +148,10 @@ function AppLayout({
           </Routes>
         </AnimatePresence>
       </main>
+
+      <div className="md:hidden fixed inset-x-0 bottom-0 z-40">
+        <BottomNav activeTab={activeTab} onTabChange={handleNavigate} />
+      </div>
     </div>
   );
 }
