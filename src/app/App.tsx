@@ -66,16 +66,16 @@ function AppLayout({
   );
 
   return (
-    <div className="flex min-h-dvh bg-[#F8F9FC] overflow-hidden">
+    <div className="flex min-h-dvh min-h-0 bg-[#F8F9FC] overflow-x-hidden">
       <Sidebar onLogout={onLogout} />
 
-      <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden pb-24 md:pb-0">
+      <main className="flex-1 min-w-0 min-h-0 overflow-visible overflow-x-hidden pb-24 md:ml-[230px] md:pb-0">
         <AnimatePresence mode="wait">
           <Routes>
             <Route
               path="/"
               element={
-                <motion.div key="home" className="h-full" {...pageVariants} transition={{ duration: 0.2 }}>
+                <motion.div key="home" className="h-full min-h-0" {...pageVariants} transition={{ duration: 0.2 }}>
                   <HomeScreen
                     onNavigate={handleNavigate}
                     user={user}
@@ -87,7 +87,7 @@ function AppLayout({
             <Route
               path="/lists"
               element={
-                <motion.div key="lists" className="h-full" {...pageVariants} transition={{ duration: 0.2 }}>
+                <motion.div key="lists" className="h-full min-h-0" {...pageVariants} transition={{ duration: 0.2 }}>
                   <ListsScreen onNavigate={handleNavigate} />
                 </motion.div>
               }
@@ -95,7 +95,7 @@ function AppLayout({
             <Route
               path="/lists/:listId"
               element={
-                <motion.div key="list-detail" className="h-full" {...pageVariants} transition={{ duration: 0.2 }}>
+                <motion.div key="list-detail" className="h-full min-h-0" {...pageVariants} transition={{ duration: 0.2 }}>
                   <ListScreen onNavigate={handleNavigate} />
                 </motion.div>
               }
@@ -103,7 +103,7 @@ function AppLayout({
             <Route
               path="/prices"
               element={
-                <motion.div key="prices" className="h-full" {...pageVariants} transition={{ duration: 0.2 }}>
+                <motion.div key="prices" className="h-full min-h-0" {...pageVariants} transition={{ duration: 0.2 }}>
                   <PricesScreen
                     favoriteProductIds={favoriteProductIds}
                     onToggleFavorite={onToggleFavorite}
@@ -114,7 +114,7 @@ function AppLayout({
             <Route
               path="/profile"
               element={
-                <motion.div key="profile" className="h-full" {...pageVariants} transition={{ duration: 0.2 }}>
+                <motion.div key="profile" className="h-full min-h-0" {...pageVariants} transition={{ duration: 0.2 }}>
                   <ProfileScreen
                     onLogout={onLogout}
                     user={user}
@@ -130,7 +130,7 @@ function AppLayout({
             <Route
               path="/profile/favorites"
               element={
-                <motion.div key="profile-favorites" className="h-full" {...pageVariants} transition={{ duration: 0.2 }}>
+                <motion.div key="profile-favorites" className="h-full min-h-0" {...pageVariants} transition={{ duration: 0.2 }}>
                   <ProfileScreen
                     onLogout={onLogout}
                     user={user}
@@ -318,7 +318,7 @@ export default function App() {
         {flow === "splash" && (
           <motion.div
             key="splash"
-            className="fixed inset-0"
+            className="relative min-h-dvh overflow-x-hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -331,7 +331,7 @@ export default function App() {
         {flow === "onboarding" && (
           <motion.div
             key="onboarding"
-            className="fixed inset-0"
+            className="relative min-h-dvh overflow-x-hidden"
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -40 }}
@@ -344,7 +344,7 @@ export default function App() {
         {flow === "app" && (
           <motion.div
             key="app"
-            className="fixed inset-0"
+            className="relative min-h-dvh overflow-x-hidden"
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}

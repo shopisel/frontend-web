@@ -400,7 +400,7 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
   ];
 
   return (
-    <div className="flex flex-col h-full bg-[#F8F9FC] overflow-hidden">
+    <div className="flex min-h-full flex-col bg-[#F8F9FC] overflow-x-hidden">
       {/* Header */}
       <div className="px-5 pt-6 pb-5 bg-white">
         <div className="flex items-center justify-between mb-4">

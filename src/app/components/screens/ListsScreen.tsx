@@ -61,7 +61,7 @@ export function ListsScreen({ onNavigate }: { onNavigate?: (tab: string) => void
 
   // ...existing code...
   return (
-    <div className="flex flex-col h-full bg-[#F8F9FC]">
+    <div className="flex min-h-full flex-col bg-[#F8F9FC] overflow-x-hidden">
       <div className="bg-white">
         <div className="max-w-6xl w-full px-5 lg:px-8 pt-5 sm:pt-6 pb-4">
           <div>
