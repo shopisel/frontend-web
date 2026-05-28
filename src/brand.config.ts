@@ -1,12 +1,6 @@
-<<<<<<< HEAD
 export const brand = {
   name: "Shopisel",
   tagline: "Compra melhor, poupa mais",
-=======
-﻿export const brand = {
-  name: "SmartCart",
-  tagline: "Shop smarter, save more",
->>>>>>> b2310f099da94959901484d6a93d1a793db314dd
   logoUrl: "/shopisel.png",
   sidebarTagline: "Compras inteligentes",
   colors: {
