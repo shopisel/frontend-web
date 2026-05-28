@@ -4,10 +4,18 @@ import { Home, List, BarChart2, User } from "lucide-react";
 export type AppTab = "home" | "lists" | "prices" | "profile";
 
 const tabs: { id: AppTab; label: string; icon: typeof Home }[] = [
+<<<<<<< HEAD
+  { id: "home", label: "Início", icon: Home },
+  { id: "lists", label: "Listas", icon: List },
+  { id: "scan", label: "Scanner", icon: ScanLine },
+  { id: "prices", label: "Preços", icon: BarChart2 },
+  { id: "profile", label: "Perfil", icon: User },
+=======
   { id: "home", label: "Home", icon: Home },
   { id: "lists", label: "Lists", icon: List },
   { id: "prices", label: "Prices", icon: BarChart2 },
   { id: "profile", label: "Profile", icon: User },
+>>>>>>> b2310f099da94959901484d6a93d1a793db314dd
 ];
 
 interface BottomNavProps {

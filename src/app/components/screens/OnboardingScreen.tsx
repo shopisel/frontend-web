@@ -7,16 +7,16 @@ const slides = [
     icon: MapPin,
     color: "#6366F1",
     bg: "#EEF2FF",
-    title: "Compare Prices Nearby",
-    subtitle: "Instantly see the best prices across stores near you and never overpay again.",
+    title: "Compara Preços Perto de Ti",
+    subtitle: "Vê instantaneamente os melhores preços nas lojas perto de ti e nunca pagues a mais.",
     image: "https://images.unsplash.com/photo-1760463921652-78b38572da45?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920",
   },
   {
     icon: List,
     color: "#10B981",
     bg: "#ECFDF5",
-    title: "Smart Shopping Lists",
-    subtitle: "Create intelligent lists that organize items by store aisle and track your spending.",
+    title: "Listas de Compras Inteligentes",
+    subtitle: "Cria listas inteligentes que organizam artigos por corredor e acompanham os teus gastos.",
     image: "https://images.unsplash.com/photo-1552825896-8059df63a1fb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920",
   },
 ];
@@ -69,7 +69,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
             onClick={onComplete}
             className="absolute top-5 right-5 px-4 py-1.5 rounded-full bg-black/20 backdrop-blur-sm text-white text-sm font-medium"
           >
-            Skip
+            Saltar
           </button>
         )}
       </div>
@@ -136,7 +136,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           whileTap={{ scale: 0.97 }}
         >
           <span className="text-white text-base font-semibold">
-            {current === slides.length - 1 ? "Get Started" : "Continue"}
+            {current === slides.length - 1 ? "Começar" : "Continuar"}
           </span>
           <ChevronRight className="w-5 h-5 text-white" />
         </motion.button>

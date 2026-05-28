@@ -1,12 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import {
-  ChevronRight, MapPin, Moon, Shield, CreditCard,
-  LogOut, Star, Store, User, Loader, RotateCcw
+  LogOut, Star, Store, User, Loader, RotateCcw, KeyRound, Pencil,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import type { Product } from "../../../api/useProducts";
 import { ImageWithFallback } from "../fallback/ImageWithFallback";
+import { keycloak } from "../../../auth/keycloak";
+import { useStores } from "../../../api/useStores";
+import type { StoreResponse } from "../../../api/useStores";
+import { useLists } from "../../../api/useLists";
+import { usePrices } from "../../../api/usePrices";
 
 interface ProfileScreenProps {
   onLogout: () => void;
@@ -39,12 +43,6 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
   );
 }
 
-const preferredStores = [
-  { name: "FreshMart", distance: "0.3 mi", active: true },
-  { name: "NatureMart", distance: "0.7 mi", active: true },
-  { name: "CostPlus", distance: "1.1 mi", active: false },
-  { name: "BioShop", distance: "1.8 mi", active: false },
-];
 
 const getProductImageSrc = (product: Product) => {
   const imageValue = product.image?.trim();
@@ -63,14 +61,70 @@ export function ProfileScreen({
   onToggleFavorite,
   initialTab = "settings",
 }: ProfileScreenProps) {
-  const [darkMode, setDarkMode] = useState(false);
-  const [locationTracking, setLocationTracking] = useState(true);
-  const [biometric, setBiometric] = useState(false);
-  const [stores, setStores] = useState(preferredStores);
   const [favoritePendingId, setFavoritePendingId] = useState<string | null>(null);
+  const [onlineStores, setOnlineStores] = useState<(StoreResponse & { active: boolean })[]>([]);
+  const [listCount, setListCount] = useState(0);
+  const [savings, setSavings] = useState(0);
+
+  const { getStores } = useStores();
+  const { getLists } = useLists();
+  const { getPrices } = usePrices();
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const all = await getStores();
+        const online = all.filter(s => s.latitude == null && s.longitude == null);
+        setOnlineStores(online.map(s => ({ ...s, active: true })));
+      } catch {}
+    })();
+  }, [getStores]);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const lists = await getLists();
+        setListCount(lists.length);
+
+        const allItems: { productId: string; storeId: string; quantity: number }[] = [];
+        for (const list of lists) {
+          for (const item of list.items ?? []) {
+            allItems.push({ productId: item.productId, storeId: item.storeId, quantity: item.quantity });
+          }
+        }
+
+        const uniquePairs = new Map<string, { productId: string; storeId: string }>();
+        for (const item of allItems) {
+          const key = `${item.productId}:${item.storeId}`;
+          if (!uniquePairs.has(key)) uniquePairs.set(key, { productId: item.productId, storeId: item.storeId });
+        }
+
+        const priceMap = new Map<string, { price: number; sale?: number }>();
+        await Promise.all(
+          Array.from(uniquePairs.values()).map(async ({ productId, storeId }) => {
+            try {
+              const prices = await getPrices(productId, storeId);
+              if (prices.length > 0) {
+                priceMap.set(`${productId}:${storeId}`, { price: prices[0].price, sale: prices[0].sale });
+              }
+            } catch {}
+          })
+        );
+
+        let total = 0;
+        for (const item of allItems) {
+          const p = priceMap.get(`${item.productId}:${item.storeId}`);
+          if (p?.sale != null && p.sale > 0 && p.sale < p.price) {
+            total += (p.price - p.sale) * item.quantity;
+          }
+        }
+        setSavings(total);
+      } catch {}
+    })();
+  }, [getLists, getPrices]);
 
   const toggleStore = (idx: number) => {
-    setStores(prev => prev.map((s, i) => i === idx ? { ...s, active: !s.active } : s));
+    setOnlineStores(prev => prev.map((s, i) => i === idx ? { ...s, active: !s.active } : s));
   };
 
   const displayName = user?.name || user?.username || "Utilizador";
@@ -86,7 +140,7 @@ export function ProfileScreen({
     <div className="flex min-h-full flex-col bg-[#F8F9FC] overflow-x-hidden">
       {/* Header */}
       <div className="px-5 pt-6 pb-6 bg-white">
-        <h1 className="text-gray-900 mb-4" style={{ fontSize: 24, fontWeight: 700 }}>Profile</h1>
+        <h1 className="text-gray-900 mb-4" style={{ fontSize: 24, fontWeight: 700 }}>Perfil</h1>
 
         {/* User card */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-gradient-to-r from-indigo-600 to-violet-600 rounded-3xl">
@@ -98,7 +152,7 @@ export function ProfileScreen({
             <p className="text-indigo-200" style={{ fontSize: 13 }}>{displayEmail}</p>
             <div className="flex items-center gap-1 mt-1">
               <Star className="w-3 h-3 text-yellow-300" fill="#FCD34D" />
-              <span className="text-white/80" style={{ fontSize: 12 }}>Premium Member</span>
+              <span className="text-white/80" style={{ fontSize: 12 }}>Membro Premium</span>
             </div>
           </div>
           <button className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
@@ -109,9 +163,8 @@ export function ProfileScreen({
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-3 mt-4">
           {[
-            { label: "Lists", value: "8" },
-            { label: "Saved", value: "$142" },
-            { label: "Scans", value: "34" },
+            { label: "Listas", value: String(listCount) },
+            { label: "Poupado", value: `€${savings.toFixed(2)}` },
           ].map((stat) => (
               <div key={stat.label} className="bg-gray-50 rounded-2xl p-3 text-center min-w-0">
               <p className="text-gray-900" style={{ fontSize: 18, fontWeight: 800 }}>{stat.value}</p>
@@ -124,7 +177,7 @@ export function ProfileScreen({
       <div className="px-5 py-4">
         <Tabs defaultValue={initialTab} className="w-full">
           <TabsList className="w-full h-11 bg-gray-100">
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="settings">Definições</TabsTrigger>
             <TabsTrigger value="favorites">Favoritos</TabsTrigger>
           </TabsList>
 
@@ -134,11 +187,13 @@ export function ProfileScreen({
               <div className="bg-white rounded-3xl p-4" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
                 <div className="flex items-center gap-2 mb-3">
                   <Store className="w-4 h-4 text-indigo-600" />
-                  <p className="text-gray-900" style={{ fontSize: 15, fontWeight: 700 }}>Preferred Stores</p>
+                  <p className="text-gray-900" style={{ fontSize: 15, fontWeight: 700 }}>Lojas Preferidas</p>
                 </div>
                 <div className="flex flex-col gap-2.5">
-                  {stores.map((store, i) => (
-                    <div key={i} className="flex items-center justify-between">
+                  {onlineStores.length === 0 ? (
+                    <p className="text-gray-400" style={{ fontSize: 13 }}>Nenhuma loja online disponível.</p>
+                  ) : onlineStores.map((store, i) => (
+                    <div key={store.id} className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
                         <div
                           className="w-8 h-8 rounded-xl flex items-center justify-center"
@@ -146,10 +201,7 @@ export function ProfileScreen({
                         >
                           <Store className="w-4 h-4" style={{ color: store.active ? "#6366F1" : "#D1D5DB" }} />
                         </div>
-                        <div>
-                          <p className="text-gray-900" style={{ fontSize: 13, fontWeight: 600 }}>{store.name}</p>
-                          <p className="text-gray-400" style={{ fontSize: 11 }}>{store.distance}</p>
-                        </div>
+                        <p className="text-gray-900" style={{ fontSize: 13, fontWeight: 600 }}>{store.name}</p>
                       </div>
                       <Toggle value={store.active} onChange={() => toggleStore(i)} />
                     </div>
@@ -157,66 +209,55 @@ export function ProfileScreen({
                 </div>
               </div>
 
-              {/* Privacy & Location */}
+              {/* Dados da Conta */}
               <div className="bg-white rounded-3xl p-4" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <MapPin className="w-4 h-4 text-indigo-600" />
-                  <p className="text-gray-900" style={{ fontSize: 15, fontWeight: 700 }}>Privacy & Location</p>
+                <div className="flex items-center gap-2 mb-4">
+                  <User className="w-4 h-4 text-indigo-600" />
+                  <p className="text-gray-900" style={{ fontSize: 15, fontWeight: 700 }}>Dados da Conta</p>
                 </div>
-                <div className="flex flex-col gap-4">
-                  {[
-                    { label: "Location Services", sub: "Find nearby store prices", value: locationTracking, onChange: setLocationTracking },
-                    { label: "Biometric Login", sub: "Use Face ID or fingerprint", value: biometric, onChange: setBiometric },
-                  ].map((item) => (
-                    <div key={item.label} className="flex items-center justify-between">
-                      <div>
-                        <p className="text-gray-900" style={{ fontSize: 13, fontWeight: 600 }}>{item.label}</p>
-                        <p className="text-gray-400" style={{ fontSize: 12 }}>{item.sub}</p>
-                      </div>
-                      <Toggle value={item.value} onChange={item.onChange} />
-                    </div>
-                  ))}
-                </div>
-              </div>
 
-              {/* Appearance */}
-              <div className="bg-white rounded-3xl p-4" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <Moon className="w-4 h-4 text-indigo-600" />
-                  <p className="text-gray-900" style={{ fontSize: 15, fontWeight: 700 }}>Appearance</p>
+                <div className="mb-3">
+                  <p className="text-gray-400 mb-1" style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                    Nome de utilizador
+                  </p>
+                  <p className="text-gray-900" style={{ fontSize: 14, fontWeight: 600 }}>
+                    {user?.username || "—"}
+                  </p>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-900" style={{ fontSize: 13, fontWeight: 600 }}>Dark Mode</p>
-                    <p className="text-gray-400" style={{ fontSize: 12 }}>Easier on the eyes at night</p>
-                  </div>
-                  <Toggle value={darkMode} onChange={setDarkMode} />
-                </div>
-              </div>
 
-              {/* Other settings */}
-              <div className="bg-white rounded-3xl overflow-hidden" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
-                {[
-                  { icon: CreditCard, label: "Subscription & Billing", color: "#6366F1" },
-                  { icon: Shield, label: "Privacy Policy", color: "#6B7280" },
-                ].map((item, i) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.label}
-                      className="w-full flex items-center gap-3 px-4 py-4"
-                      style={{ borderBottom: i === 0 ? "1px solid #F3F4F6" : "none" }}
-                    >
-                      <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: item.color + "15" }}>
-                        <Icon className="w-4 h-4" style={{ color: item.color }} />
-                      </div>
-                      <span className="flex-1 text-left text-gray-900" style={{ fontSize: 13, fontWeight: 600 }}>
-                        {item.label}
-                      </span>
-                      <ChevronRight className="w-4 h-4 text-gray-300" />
-                    </button>
-                  );
-                })}
+                <div className="mb-4">
+                  <p className="text-gray-400 mb-1" style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                    E-mail
+                  </p>
+                  <p className="text-gray-900" style={{ fontSize: 14, fontWeight: 600 }}>
+                    {user?.email || "—"}
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void keycloak?.login({ action: "UPDATE_PASSWORD" })}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl"
+                    style={{ backgroundColor: "#EEF2FF" }}
+                  >
+                    <KeyRound className="w-4 h-4 text-indigo-600" />
+                    <span className="text-indigo-700" style={{ fontSize: 13, fontWeight: 600 }}>
+                      Alterar palavra-passe
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void keycloak?.accountManagement()}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl"
+                    style={{ backgroundColor: "#F9FAFB" }}
+                  >
+                    <Pencil className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-700" style={{ fontSize: 13, fontWeight: 600 }}>
+                      Editar perfil
+                    </span>
+                  </button>
+                </div>
               </div>
 
               {/* Logout */}
@@ -226,7 +267,7 @@ export function ProfileScreen({
                 className="w-full py-4 rounded-2xl flex items-center justify-center gap-2 bg-red-50 mb-6"
               >
                 <LogOut className="w-4 h-4 text-red-500" />
-                <span className="text-red-500" style={{ fontSize: 14, fontWeight: 600 }}>Sign Out</span>
+                <span className="text-red-500" style={{ fontSize: 14, fontWeight: 600 }}>Terminar Sessão</span>
               </motion.button>
             </div>
           </TabsContent>

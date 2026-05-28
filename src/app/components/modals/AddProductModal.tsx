@@ -347,11 +347,11 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                     ? selectedSubCategory.name
                     : selectedCategory
                       ? selectedCategory.name
-                      : "Add Product"}
+                      : "Adicionar Produto"}
               </h2>
               {addedCount > 0 && !selectedProduct && (
                 <p className="text-green-600" style={{ fontSize: 12, fontWeight: 600 }}>
-                  {addedCount} {addedCount === 1 ? "item" : "items"} added
+                  {addedCount} {addedCount === 1 ? "artigo" : "artigos"} adicionado{addedCount === 1 ? "" : "s"}
                 </p>
               )}
             </div>
@@ -454,7 +454,7 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                     }}
                   >
                     <Type className="w-4 h-4" />
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>Search</span>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>Pesquisar</span>
                   </button>
                   <button
                     onClick={() => setMethod("category")}
@@ -465,7 +465,7 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                     }}
                   >
                     <Grid3x3 className="w-4 h-4" />
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>Category</span>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>Categoria</span>
                   </button>
                 </div>
               )}

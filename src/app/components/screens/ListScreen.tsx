@@ -378,8 +378,13 @@ const handleAddItem = async (addedItem: any) => {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="flex-1 flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5">
             <Search className="w-4 h-4 text-gray-400" />
+<<<<<<< HEAD
+            <input 
+              placeholder="Pesquisar artigos..."
+=======
             <input
               placeholder="Search items..."
+>>>>>>> b2310f099da94959901484d6a93d1a793db314dd
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="flex-1 bg-transparent outline-none text-gray-700"
@@ -397,7 +402,7 @@ const handleAddItem = async (addedItem: any) => {
             type="button"
           >
             <Plus className="w-4 h-4 text-white" />
-            Add item
+            Adicionar artigo
           </motion.button>
         </div>
         </div>
