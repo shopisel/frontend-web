@@ -83,7 +83,7 @@ export function ProfileScreen({
     .join("");
 
   return (
-    <div className="flex flex-col h-full bg-[#F8F9FC] overflow-y-auto">
+    <div className="flex min-h-full flex-col bg-[#F8F9FC] overflow-x-hidden">
       {/* Header */}
       <div className="px-5 pt-6 pb-6 bg-white">
         <h1 className="text-gray-900 mb-4" style={{ fontSize: 24, fontWeight: 700 }}>Profile</h1>

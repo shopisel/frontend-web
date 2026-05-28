@@ -313,7 +313,7 @@ const handleAddItem = async (addedItem: any) => {
   const checkedCount = items.filter(i => i.checked).length;
 
   return (
-    <div className="flex flex-col h-full bg-[#F8F9FC]">
+    <div className="flex min-h-full flex-col bg-[#F8F9FC] overflow-x-hidden">
       <div className="bg-white shadow-sm z-10 relative">
         <div className="max-w-5xl mx-auto w-full px-5 lg:px-8 pt-5 sm:pt-6 pb-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center mb-3">
