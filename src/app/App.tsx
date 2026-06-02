@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
-import { SplashScreen } from "./components/screens/SplashScreen";
 import { OnboardingScreen } from "./components/screens/OnboardingScreen";
 import { HomeScreen } from "./components/screens/HomeScreen/index";
 import { ListsScreen } from "./components/screens/ListsScreen";
@@ -14,7 +13,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { useAccounts } from "../api/useAccounts";
 import { useProducts, type Product } from "../api/useProducts";
 
-type AppFlow = "splash" | "onboarding" | "auth" | "app";
+type AppFlow = "onboarding" | "auth" | "app";
 
 const pageVariants = {
   initial: { opacity: 0, y: 8 },
@@ -160,7 +159,7 @@ export default function App() {
   const { initialized, isAuthenticated, login, register, logout, configError, user } = useAuth();
   const { syncMyAccount, getMyFavoriteProductIds, addFavoriteProduct, removeFavoriteProduct } = useAccounts();
   const { getProductsByIds } = useProducts();
-  const [flow, setFlow] = useState<AppFlow>("splash");
+  const [flow, setFlow] = useState<AppFlow>("onboarding");
   const [authLoading, setAuthLoading] = useState(false);
   const [favoriteProductIds, setFavoriteProductIds] = useState<string[]>([]);
   const [favoriteProducts, setFavoriteProducts] = useState<Product[]>([]);
@@ -177,14 +176,6 @@ export default function App() {
       setFlow("auth");
     }
   }, [initialized, isAuthenticated, flow]);
-
-  const handleSplashComplete = useCallback(() => {
-    if (isAuthenticated) {
-      setFlow("app");
-      return;
-    }
-    setFlow("onboarding");
-  }, [isAuthenticated]);
 
   const handleOnboardingComplete = useCallback(async () => {
     if (isAuthenticated) {
@@ -315,19 +306,6 @@ export default function App() {
   return (
     <div className="min-h-screen">
       <AnimatePresence mode="wait">
-        {flow === "splash" && (
-          <motion.div
-            key="splash"
-            className="relative min-h-dvh overflow-x-hidden"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <SplashScreen onComplete={handleSplashComplete} />
-          </motion.div>
-        )}
-
         {flow === "onboarding" && (
           <motion.div
             key="onboarding"
@@ -337,7 +315,11 @@ export default function App() {
             exit={{ opacity: 0, x: -40 }}
             transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
           >
-            <OnboardingScreen onComplete={handleOnboardingComplete} />
+            <OnboardingScreen
+              onLogin={handleKeycloakLogin}
+              onRegister={handleKeycloakRegister}
+              isLoading={authLoading}
+            />
           </motion.div>
         )}
         
