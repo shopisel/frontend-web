@@ -3,11 +3,11 @@ import { AnimatePresence, motion } from "motion/react";
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { SplashScreen } from "./components/screens/SplashScreen";
 import { OnboardingScreen } from "./components/screens/OnboardingScreen";
-import { HomeScreen } from "./components/screens/HomeScreen";
+import { HomeScreen } from "./components/screens/HomeScreen/index";
 import { ListsScreen } from "./components/screens/ListsScreen";
-import { ListScreen } from "./components/screens/ListScreen";
-import { PricesScreen } from "./components/screens/PricesScreen";
-import { ProfileScreen } from "./components/screens/ProfileScreen";
+import { ListScreen } from "./components/screens/ListScreen/index";
+import { PricesScreen } from "./components/screens/PricesScreen/index";
+import { ProfileScreen } from "./components/screens/ProfileScreen/index";
 import { Sidebar } from "./components/layout/Sidebar";
 import { BottomNav, type AppTab } from "./components/layout/BottomNav";
 import { useAuth } from "../auth/AuthProvider";
@@ -66,7 +66,7 @@ function AppLayout({
   );
 
   return (
-    <div className="flex min-h-dvh min-h-0 bg-[#F8F9FC] overflow-x-hidden">
+    <div className="flex min-h-dvh min-h-0 bg-page overflow-x-hidden">
       <Sidebar onLogout={onLogout} />
 
       <main className="flex-1 min-w-0 min-h-0 overflow-visible overflow-x-hidden pb-24 md:ml-[230px] md:pb-0">

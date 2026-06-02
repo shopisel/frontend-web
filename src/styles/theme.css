@@ -1,6 +1,18 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* App brand colours */
+  --brand: #6366F1;
+  --brand-light: #EEF2FF;
+  --brand-muted: #E0E7FF;
+  --success: #10B981;
+  --success-light: #ECFDF5;
+  --warning-light: #FFF7ED;
+  --page-bg: #F8F9FC;
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.05);
+  --shadow-card-sm: 0 1px 4px rgba(0,0,0,0.04);
+  --shadow-card-md: 0 2px 16px rgba(0,0,0,0.06);
+
   --font-size: 16px;
   --background: #ffffff;
   --foreground: oklch(0.145 0 0);
@@ -184,4 +196,16 @@
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
   }
+}
+
+@layer utilities {
+  .bg-page      { background-color: var(--page-bg); }
+  .text-brand   { color: var(--brand); }
+  .bg-brand     { background-color: var(--brand); }
+  .bg-brand-light { background-color: var(--brand-light); }
+  .text-success { color: var(--success); }
+  .bg-success-light { background-color: var(--success-light); }
+  .shadow-card  { box-shadow: var(--shadow-card); }
+  .shadow-card-sm { box-shadow: var(--shadow-card-sm); }
+  .shadow-card-md { box-shadow: var(--shadow-card-md); }
 }
