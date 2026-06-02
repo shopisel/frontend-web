@@ -43,7 +43,7 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
               <div className="relative">
                 <Icon
                   className="w-6 h-6 transition-colors"
-                  style={{ color: isActive ? "#6366F1" : "#9CA3AF" }}
+                  style={{ color: isActive ? "var(--brand)" : "#9CA3AF" }}
                   strokeWidth={isActive ? 2.2 : 1.8}
                 />
               </div>
@@ -51,7 +51,7 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
                 style={{
                   fontSize: 10,
                   fontWeight: isActive ? 700 : 500,
-                  color: isActive ? "#6366F1" : "#9CA3AF",
+                  color: isActive ? "var(--brand)" : "#9CA3AF",
                 }}
               >
                 {tab.label}

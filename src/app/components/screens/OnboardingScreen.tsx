@@ -5,16 +5,16 @@ import { MapPin, List, ChevronRight } from "lucide-react";
 const slides = [
   {
     icon: MapPin,
-    color: "#6366F1",
-    bg: "#EEF2FF",
+    color: "var(--brand)",
+    bg: "var(--brand-light)",
     title: "Compara Preços Perto de Ti",
     subtitle: "Vê instantaneamente os melhores preços nas lojas perto de ti e nunca pagues a mais.",
     image: "https://images.unsplash.com/photo-1760463921652-78b38572da45?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920",
   },
   {
     icon: List,
-    color: "#10B981",
-    bg: "#ECFDF5",
+    color: "var(--success)",
+    bg: "var(--success-light)",
     title: "Listas de Compras Inteligentes",
     subtitle: "Cria listas inteligentes que organizam artigos por corredor e acompanham os teus gastos.",
     image: "https://images.unsplash.com/photo-1552825896-8059df63a1fb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920",
