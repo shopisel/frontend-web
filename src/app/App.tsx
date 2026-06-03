@@ -306,7 +306,7 @@ export default function App() {
   return (
     <div className="min-h-screen">
       <AnimatePresence mode="wait">
-        {flow === "onboarding" && (
+        {flow === "onboarding" && initialized && (
           <motion.div
             key="onboarding"
             className="relative min-h-dvh overflow-x-hidden"
