@@ -161,6 +161,14 @@ export default function App() {
   const { getProductsByIds } = useProducts();
   const [flow, setFlow] = useState<AppFlow>("onboarding");
   const [authLoading, setAuthLoading] = useState(false);
+
+  useEffect(() => {
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) window.location.reload();
+    };
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
   const [favoriteProductIds, setFavoriteProductIds] = useState<string[]>([]);
   const [favoriteProducts, setFavoriteProducts] = useState<Product[]>([]);
   const [favoritesLoading, setFavoritesLoading] = useState(false);
