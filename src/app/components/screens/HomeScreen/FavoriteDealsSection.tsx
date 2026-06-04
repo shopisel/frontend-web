@@ -1,5 +1,6 @@
 import { motion } from "motion/react";
 import { ChevronRight, MapPin, Loader2, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import type { FavoriteDeal } from "./types";
 import type { ListResponse } from "../../../../api/useLists";
 
@@ -27,6 +28,7 @@ export function FavoriteDealsSection({
   onViewAll,
   onAddToList,
 }: FavoriteDealsSectionProps) {
+  const navigate = useNavigate();
   return (
     <div className="mb-4">
       <div className="px-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
@@ -54,7 +56,10 @@ export function FavoriteDealsSection({
             style={{ backgroundColor: deal.color, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}
             whileTap={{ scale: 0.96 }}
             whileHover={{ y: -2 }}
-            onClick={onViewAll}
+            onClick={() => navigate(`/prices/${deal.id}`)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate(`/prices/${deal.id}`); }}
           >
             <div className="w-14 h-14 rounded-2xl bg-white/80 mb-2 overflow-hidden flex items-center justify-center">
               {deal.imageSrc ? (

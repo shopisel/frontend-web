@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useProducts, type Category, type Product } from "../../../../api/useProducts";
 import { usePrices, type PriceResponse } from "../../../../api/usePrices";
 import { useStores } from "../../../../api/useStores";
@@ -7,6 +8,7 @@ import { PRODUCTS_PAGE_SIZE, RELATED_PRODUCTS_LIMIT, DEBOUNCE_SEARCH_MS } from "
 import { CategoryFilter } from "./CategoryFilter";
 import { ProductSelector } from "./ProductSelector";
 import { ProductDetailCard } from "./ProductDetailCard";
+import { RelatedProductsDrawer } from "./RelatedProductsDrawer";
 import { StoreList } from "./StoreList";
 import type { StoreRow } from "./types";
 
@@ -19,7 +21,9 @@ type PricesScreenProps = {
 };
 
 export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScreenProps) {
-  const { searchProducts, getMainCategories, getSubCategories, getProductsByCategory, getRelatedProductsByFavoriteIds } = useProducts();
+  const navigate = useNavigate();
+  const { productId } = useParams<{ productId?: string }>();
+  const { searchProducts, getMainCategories, getSubCategories, getProductsByCategory, getProductsByIds, getRelatedProductsByFavoriteIds } = useProducts();
   const { getPrices } = usePrices();
   const { getStores } = useStores();
 
@@ -34,6 +38,7 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"price" | "distance">("price");
   const [mapView, setMapView] = useState(false);
+  const [isRelatedDrawerOpen, setIsRelatedDrawerOpen] = useState(false);
   const [isLoadingCats, setIsLoadingCats] = useState(false);
   const [isLoadingSubCats, setIsLoadingSubCats] = useState(false);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
@@ -45,26 +50,45 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
   const [error, setError] = useState<string | null>(null);
 
   const resetCategorySelection = () => { setSelectedMainCat(null); setSelectedSubCat(null); setSubCategories([]); };
-  const resetProductSelection = () => { setProducts([]); setSelectedProduct(null); setStoreRows([]); setHasMoreProducts(false); setIsLoadingMoreProducts(false); };
+  const resetProductSelection = () => {
+    setProducts([]);
+    setSelectedProduct(null);
+    setStoreRows([]);
+    setHasMoreProducts(false);
+    setIsLoadingMoreProducts(false);
+    setIsRelatedDrawerOpen(false);
+  };
+
+
+  const selectProduct = (product: Product, options?: { replace?: boolean }) => {
+    setSelectedProduct(product);
+    setProducts(prev => (prev.some(p => p.id === product.id) ? prev : [product, ...prev]));
+    void navigate(`/prices/${product.id}`, { replace: options?.replace ?? false });
+  };
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    if (value.trim()) { resetCategorySelection(); resetProductSelection(); }
+    if (value.trim()) {
+      resetCategorySelection();
+      resetProductSelection();
+      void navigate("/prices", { replace: true });
+    }
   };
 
   const handleSelectMainCategory = (cat: Category | null) => {
     if (searchQuery.trim()) setSearchQuery("");
+    void navigate("/prices", { replace: true });
     setSelectedMainCat(cat);
   };
 
   const handleSelectSubCategory = (cat: Category) => {
     if (searchQuery.trim()) setSearchQuery("");
+    void navigate("/prices", { replace: true });
     setSelectedSubCat(cat);
   };
 
   const handleSelectRelatedProduct = (rp: Product) => {
-    setProducts(prev => prev.some(p => p.id === rp.id) ? prev : [rp, ...prev]);
-    setSelectedProduct(rp);
+    selectProduct(rp);
   };
 
   useEffect(() => {
@@ -122,12 +146,47 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
     if (!selectedProduct) { setRelatedProducts([]); return; }
     let cancelled = false;
     setIsLoadingRelatedProducts(true);
-    getRelatedProductsByFavoriteIds([selectedProduct.id], RELATED_PRODUCTS_LIMIT)
+    // Fetch all related products and paginate locally in the drawer
+    getRelatedProductsByFavoriteIds([selectedProduct.id])
       .then(data => { if (!cancelled) setRelatedProducts((data || []).filter(p => p.id !== selectedProduct.id)); })
       .catch(() => { if (!cancelled) setRelatedProducts([]); })
       .finally(() => { if (!cancelled) setIsLoadingRelatedProducts(false); });
     return () => { cancelled = true; };
   }, [selectedProduct, getRelatedProductsByFavoriteIds]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (productId) {
+      const match = products.find(p => p.id === productId);
+      if (match) {
+        if (selectedProduct?.id !== match.id) setSelectedProduct(match);
+        return () => { cancelled = true; };
+      }
+
+      (async () => {
+        try {
+          const data = await getProductsByIds([productId]);
+          const found = data?.[0] ?? null;
+          if (!cancelled && found) {
+            setProducts(prev => (prev.some(p => p.id === found.id) ? prev : [found, ...prev]));
+            setSelectedProduct(found);
+          }
+        } catch {
+          if (!cancelled) {
+            setSelectedProduct(null);
+          }
+        }
+      })();
+
+      return () => { cancelled = true; };
+    }
+
+    // Do not auto-select the first product when entering the Prices tab.
+    // Selection will only happen when `productId` param is present or user explicit selects a product.
+
+    return () => { cancelled = true; };
+  }, [productId, products, selectedProduct, getProductsByIds, navigate]);
 
   const loadMoreProducts = async () => {
     if (isLoadingProducts || isLoadingMoreProducts || !hasMoreProducts) return;
@@ -144,11 +203,6 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
     } catch (e) { setError(e instanceof Error ? e.message : "Erro ao carregar mais"); }
     finally { setIsLoadingMoreProducts(false); }
   };
-
-  useEffect(() => {
-    if (!products.length) { setSelectedProduct(null); setStoreRows([]); return; }
-    if (!selectedProduct || !products.some(p => p.id === selectedProduct.id)) setSelectedProduct(products[0]);
-  }, [products, selectedProduct]);
 
   useEffect(() => {
     if (!selectedProduct) { setStoreRows([]); return; }
@@ -207,10 +261,42 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
 
       <div className="flex-1 overflow-y-auto">
         {error && <div className="px-5 pt-3 text-red-500 text-xs font-semibold">{error}</div>}
-        <ProductSelector products={products} selectedProduct={selectedProduct} favoriteProductIds={favoriteProductIds} isLoadingProducts={isLoadingProducts} isLoadingMoreProducts={isLoadingMoreProducts} hasMoreProducts={hasMoreProducts} searchQuery={searchQuery} selectedMainCat={selectedMainCat} selectedSubCat={selectedSubCat} onSelectProduct={setSelectedProduct} onLoadMore={() => void loadMoreProducts()} />
-        <ProductDetailCard selectedProduct={selectedProduct} selectedMainCat={selectedMainCat} selectedSubCat={selectedSubCat} sortedStores={sortedStores} selectedUnitPriceText={selectedUnitPriceText} maxPromoSaving={maxPromoSaving} relatedProducts={relatedProducts} isLoadingRelatedProducts={isLoadingRelatedProducts} selectedProductFavorite={selectedProductFavorite} favoritePendingId={favoritePendingId} onToggleFavorite={p => void handleToggleFavorite(p)} onSelectRelatedProduct={handleSelectRelatedProduct} />
+        <ProductSelector
+          products={products}
+          selectedProduct={selectedProduct}
+          favoriteProductIds={favoriteProductIds}
+          isLoadingProducts={isLoadingProducts}
+          isLoadingMoreProducts={isLoadingMoreProducts}
+          hasMoreProducts={hasMoreProducts}
+          searchQuery={searchQuery}
+          selectedMainCat={selectedMainCat}
+          selectedSubCat={selectedSubCat}
+          onSelectProduct={product => selectProduct(product)}
+          onLoadMore={() => void loadMoreProducts()}
+        />
+        <ProductDetailCard
+          selectedProduct={selectedProduct}
+          selectedMainCat={selectedMainCat}
+          selectedSubCat={selectedSubCat}
+          sortedStores={sortedStores}
+          selectedUnitPriceText={selectedUnitPriceText}
+          maxPromoSaving={maxPromoSaving}
+          relatedProductsCount={relatedProducts.length}
+          selectedProductFavorite={selectedProductFavorite}
+          favoritePendingId={favoritePendingId}
+          onToggleFavorite={p => void handleToggleFavorite(p)}
+          onOpenRelatedProducts={() => setIsRelatedDrawerOpen(true)}
+        />
         <StoreList sortedStores={sortedStores} selectedProduct={selectedProduct} isLoadingStores={isLoadingStores} sortBy={sortBy} mapView={mapView} onChangeSortBy={setSortBy} onToggleMapView={() => setMapView(v => !v)} />
       </div>
+
+      <RelatedProductsDrawer
+        open={isRelatedDrawerOpen}
+        isLoading={isLoadingRelatedProducts}
+        products={relatedProducts}
+        onOpenChange={setIsRelatedDrawerOpen}
+        onSelectProduct={handleSelectRelatedProduct}
+      />
     </div>
   );
 }
