@@ -4,12 +4,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useProducts, type Category, type Product } from "../../../../api/useProducts";
 import { usePrices, type PriceResponse } from "../../../../api/usePrices";
 import { useStores } from "../../../../api/useStores";
-import { PRODUCTS_PAGE_SIZE, RELATED_PRODUCTS_LIMIT, DEBOUNCE_SEARCH_MS } from "../../../../lib/constants";
+import { PRODUCTS_PAGE_SIZE, DEBOUNCE_SEARCH_MS } from "../../../../lib/constants";
 import { CategoryFilter } from "./CategoryFilter";
 import { ProductSelector } from "./ProductSelector";
 import { ProductDetailCard } from "./ProductDetailCard";
 import { RelatedProductsDrawer } from "./RelatedProductsDrawer";
 import { StoreList } from "./StoreList";
+import { AddToListSheet } from "./AddToListSheet";
 import type { StoreRow } from "./types";
 
 const getEffectivePrice = (price: PriceResponse) =>
@@ -48,6 +49,7 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
   const [isLoadingStores, setIsLoadingStores] = useState(false);
   const [favoritePendingId, setFavoritePendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [addToListOpen, setAddToListOpen] = useState(false);
 
   const resetCategorySelection = () => { setSelectedMainCat(null); setSelectedSubCat(null); setSubCategories([]); };
   const resetProductSelection = () => {
@@ -58,7 +60,6 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
     setIsLoadingMoreProducts(false);
     setIsRelatedDrawerOpen(false);
   };
-
 
   const selectProduct = (product: Product, options?: { replace?: boolean }) => {
     setSelectedProduct(product);
@@ -146,7 +147,6 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
     if (!selectedProduct) { setRelatedProducts([]); return; }
     let cancelled = false;
     setIsLoadingRelatedProducts(true);
-    // Fetch all related products and paginate locally in the drawer
     getRelatedProductsByFavoriteIds([selectedProduct.id])
       .then(data => { if (!cancelled) setRelatedProducts((data || []).filter(p => p.id !== selectedProduct.id)); })
       .catch(() => { if (!cancelled) setRelatedProducts([]); })
@@ -173,17 +173,12 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
             setSelectedProduct(found);
           }
         } catch {
-          if (!cancelled) {
-            setSelectedProduct(null);
-          }
+          if (!cancelled) setSelectedProduct(null);
         }
       })();
 
       return () => { cancelled = true; };
     }
-
-    // Do not auto-select the first product when entering the Prices tab.
-    // Selection will only happen when `productId` param is present or user explicit selects a product.
 
     return () => { cancelled = true; };
   }, [productId, products, selectedProduct, getProductsByIds, navigate]);
@@ -286,6 +281,7 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
           favoritePendingId={favoritePendingId}
           onToggleFavorite={p => void handleToggleFavorite(p)}
           onOpenRelatedProducts={() => setIsRelatedDrawerOpen(true)}
+          onAddToList={() => setAddToListOpen(true)}
         />
         <StoreList sortedStores={sortedStores} selectedProduct={selectedProduct} isLoadingStores={isLoadingStores} sortBy={sortBy} mapView={mapView} onChangeSortBy={setSortBy} onToggleMapView={() => setMapView(v => !v)} />
       </div>
@@ -296,6 +292,13 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
         products={relatedProducts}
         onOpenChange={setIsRelatedDrawerOpen}
         onSelectProduct={handleSelectRelatedProduct}
+      />
+
+      <AddToListSheet
+        product={selectedProduct}
+        bestStore={sortedStores[0] ?? null}
+        isOpen={addToListOpen}
+        onClose={() => setAddToListOpen(false)}
       />
     </div>
   );

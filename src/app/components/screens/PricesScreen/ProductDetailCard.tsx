@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { ChevronRight, Loader, Star, Tag } from "lucide-react";
+import { ChevronRight, Loader, Star, Tag, ListPlus } from "lucide-react";
 import type { Product, Category } from "../../../../api/useProducts";
 import type { StoreRow } from "./types";
 import { ImageWithFallback } from "../../fallback/ImageWithFallback";
@@ -17,6 +17,7 @@ interface ProductDetailCardProps {
   favoritePendingId: string | null;
   onToggleFavorite: (product: Product) => void;
   onOpenRelatedProducts: () => void;
+  onAddToList: () => void;
 }
 
 export function ProductDetailCard({
@@ -31,6 +32,7 @@ export function ProductDetailCard({
   favoritePendingId,
   onToggleFavorite,
   onOpenRelatedProducts,
+  onAddToList,
 }: ProductDetailCardProps) {
   if (!selectedProduct) {
     return (
@@ -110,7 +112,17 @@ export function ProductDetailCard({
           </div>
         </div>
 
-        <div className="mt-5">
+        <button
+          type="button"
+          onClick={onAddToList}
+          className="w-full mt-4 flex items-center justify-center gap-2 py-3 rounded-2xl transition-colors"
+          style={{ backgroundColor: "rgba(255,255,255,0.15)", color: "white" }}
+        >
+          <ListPlus className="w-4 h-4" />
+          <span style={{ fontSize: 13, fontWeight: 600 }}>Adicionar à lista</span>
+        </button>
+
+        <div className="mt-3">
           <button
             type="button"
             onClick={onOpenRelatedProducts}
@@ -118,9 +130,9 @@ export function ProductDetailCard({
             style={{ backgroundColor: "rgba(255,255,255,0.12)" }}
           >
             <div>
-                <p className="text-white" style={{ fontSize: 13, fontWeight: 700 }}>
-                  Produtos relacionados
-                </p>
+              <p className="text-white" style={{ fontSize: 13, fontWeight: 700 }}>
+                Produtos relacionados
+              </p>
             </div>
             <div className="flex items-center gap-2 text-white/90">
               <span style={{ fontSize: 12, fontWeight: 700 }}>Ver</span>
