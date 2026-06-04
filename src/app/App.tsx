@@ -100,7 +100,7 @@ function AppLayout({
               }
             />
             <Route
-              path="/prices"
+              path="/prices/:productId?"
               element={
                 <motion.div key="prices" className="h-full min-h-0" {...pageVariants} transition={{ duration: 0.2 }}>
                   <PricesScreen

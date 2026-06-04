@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { Star, Tag, Loader } from "lucide-react";
+import { ChevronRight, Loader, Star, Tag } from "lucide-react";
 import type { Product, Category } from "../../../../api/useProducts";
 import type { StoreRow } from "./types";
 import { ImageWithFallback } from "../../fallback/ImageWithFallback";
@@ -12,12 +12,11 @@ interface ProductDetailCardProps {
   sortedStores: StoreRow[];
   selectedUnitPriceText: string;
   maxPromoSaving: number;
-  relatedProducts: Product[];
-  isLoadingRelatedProducts: boolean;
+  relatedProductsCount: number;
   selectedProductFavorite: boolean;
   favoritePendingId: string | null;
   onToggleFavorite: (product: Product) => void;
-  onSelectRelatedProduct: (product: Product) => void;
+  onOpenRelatedProducts: () => void;
 }
 
 export function ProductDetailCard({
@@ -27,12 +26,11 @@ export function ProductDetailCard({
   sortedStores,
   selectedUnitPriceText,
   maxPromoSaving,
-  relatedProducts,
-  isLoadingRelatedProducts,
+  relatedProductsCount,
   selectedProductFavorite,
   favoritePendingId,
   onToggleFavorite,
-  onSelectRelatedProduct,
+  onOpenRelatedProducts,
 }: ProductDetailCardProps) {
   if (!selectedProduct) {
     return (
@@ -66,7 +64,7 @@ export function ProductDetailCard({
           </div>
           <div className="flex-1">
             <p className="text-indigo-200" style={{ fontSize: 12 }}>
-              {selectedSubCat?.name || selectedMainCat?.name || "All products"}
+              {selectedSubCat?.name || selectedMainCat?.name || "Todos os produtos"}
             </p>
             <p className="text-white" style={{ fontSize: 16, fontWeight: 700 }}>{selectedProduct.name}</p>
             {(selectedProduct.brand || selectedUnitPriceText) && (
@@ -113,60 +111,22 @@ export function ProductDetailCard({
         </div>
 
         <div className="mt-5">
-          <p
-            className="mb-2"
-            style={{ fontSize: 12, fontWeight: 700, color: "var(--brand-muted)", textTransform: "uppercase", letterSpacing: 0.5 }}
+          <button
+            type="button"
+            onClick={onOpenRelatedProducts}
+            className="w-full rounded-2xl px-4 py-3 flex items-center justify-between text-left"
+            style={{ backgroundColor: "rgba(255,255,255,0.12)" }}
           >
-            Produtos Relacionados
-          </p>
-          {isLoadingRelatedProducts ? (
-            <div className="flex items-center gap-2">
-              <Loader className="w-4 h-4 animate-spin" style={{ color: "var(--brand-muted)" }} />
-              <span style={{ fontSize: 12, color: "var(--brand-muted)" }}>A carregar...</span>
+            <div>
+                <p className="text-white" style={{ fontSize: 13, fontWeight: 700 }}>
+                  Produtos relacionados
+                </p>
             </div>
-          ) : relatedProducts.length > 0 ? (
-            <div className="flex gap-2.5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-              {relatedProducts.map((rp) => {
-                const rpImgSrc = getProductImageSrc(rp);
-                return (
-                  <button
-                    key={rp.id}
-                    type="button"
-                    onClick={() => onSelectRelatedProduct(rp)}
-                    className="flex-shrink-0 rounded-xl p-2.5 text-left"
-                    style={{ width: 108, backgroundColor: "rgba(255,255,255,0.12)" }}
-                  >
-                    <div
-                      className="h-16 rounded-lg overflow-hidden flex items-center justify-center mb-2"
-                      style={{ backgroundColor: "rgba(255,255,255,0.18)" }}
-                    >
-                      {rpImgSrc ? (
-                        <ImageWithFallback src={rpImgSrc} alt={rp.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <span style={{ fontSize: 20 }}>{rp.emoji || "📦"}</span>
-                      )}
-                    </div>
-                    <p
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: "white",
-                        lineHeight: "16px",
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {rp.name}
-                    </p>
-                  </button>
-                );
-              })}
+            <div className="flex items-center gap-2 text-white/90">
+              <span style={{ fontSize: 12, fontWeight: 700 }}>Ver</span>
+              <ChevronRight className="w-4 h-4" />
             </div>
-          ) : (
-            <p style={{ fontSize: 12, color: "var(--brand-muted)" }}>Sem produtos relacionados</p>
-          )}
+          </button>
         </div>
       </motion.div>
     </div>

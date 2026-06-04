@@ -1,4 +1,5 @@
 import { Star, Loader, RotateCcw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import type { Product } from "../../../../api/useProducts";
 import { ImageWithFallback } from "../../fallback/ImageWithFallback";
 import { getProductImageSrc } from "../../../../lib/imageUtils";
@@ -13,6 +14,7 @@ interface FavoritesTabProps {
 }
 
 export function FavoritesTab({ products, isLoading, error, pendingId, onReload, onToggle }: FavoritesTabProps) {
+  const navigate = useNavigate();
   return (
     <div className="bg-white rounded-3xl p-4 mb-6" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
       <div className="flex items-center justify-between gap-3 mb-3">
@@ -47,7 +49,16 @@ export function FavoritesTab({ products, isLoading, error, pendingId, onReload, 
           {products.map((product) => {
             const imageSrc = getProductImageSrc(product);
             return (
-              <div key={product.id} className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50">
+              <div
+                key={product.id}
+                className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50 cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/prices/${product.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") navigate(`/prices/${product.id}`);
+                }}
+              >
                 <div className="w-11 h-11 rounded-xl bg-white overflow-hidden flex items-center justify-center flex-shrink-0">
                   {imageSrc ? (
                     <ImageWithFallback src={imageSrc} alt={product.name} className="w-full h-full object-cover" />
@@ -63,7 +74,7 @@ export function FavoritesTab({ products, isLoading, error, pendingId, onReload, 
                 </div>
                 <button
                   type="button"
-                  onClick={() => onToggle(product)}
+                  onClick={(e) => { e.stopPropagation(); onToggle(product); }}
                   className="w-8 h-8 rounded-xl bg-white flex items-center justify-center disabled:opacity-60"
                   disabled={pendingId === product.id}
                   aria-label="Remover dos favoritos"
