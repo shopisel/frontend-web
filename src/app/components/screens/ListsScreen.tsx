@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { Plus, ChevronRight, ShoppingCart, RefreshCw, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useLists, ListResponse } from "../../../api/useLists";
+import { ApiError } from "../../../api/useApi";
 
 export function ListsScreen({ onNavigate }: { onNavigate?: (tab: string) => void }) {
   const { getLists, createList, removeList } = useLists();
@@ -11,6 +12,18 @@ export function ListsScreen({ onNavigate }: { onNavigate?: (tab: string) => void
   const [lists, setLists] = useState<ListResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  const getListActionErrorMessage = useCallback((error: unknown) => {
+    if (error instanceof ApiError) {
+      if (error.status === 428) return "Falta a versao da lista. Recarrega e tenta novamente.";
+      if (error.status === 409) return "A lista foi alterada por outro utilizador. Recarrega e refaz o merge.";
+      return error.message;
+    }
+    if (error instanceof Error) {
+      return error.message;
+    }
+    return "Nao foi possivel concluir a acao sobre a lista.";
+  }, []);
 
   const loadLists = useCallback(async () => {
     setIsLoading(true);
@@ -47,11 +60,17 @@ export function ListsScreen({ onNavigate }: { onNavigate?: (tab: string) => void
   const handleDeleteList = async (listId: string) => {
     setIsLoading(true);
     try {
-      await removeList(listId);
+      const currentList = lists.find(list => list.id === listId);
+      if (!currentList) return;
+      await removeList(listId, currentList.version);
       setLists(prev => prev.filter(list => list.id !== listId));
       setDeleteConfirm(null);
     } catch (e) {
       console.error(e);
+      window.alert(getListActionErrorMessage(e));
+      if (deleteConfirm) {
+        await loadLists();
+      }
     } finally {
       setIsLoading(false);
     }
