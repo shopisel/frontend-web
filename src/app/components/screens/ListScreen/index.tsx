@@ -4,6 +4,7 @@ import { Plus, Trash2, ChevronRight, Search, RefreshCw } from "lucide-react";
 import { AddProductModal, type AddItemPayload } from "../../modals/AddProductModal/index";
 import { useParams, useNavigate } from "react-router-dom";
 import { useLists, ListResponse, ListItemRequest } from "../../../../api/useLists";
+import { ApiError } from "../../../../api/useApi";
 import { useProducts, Product } from "../../../../api/useProducts";
 import { useStores, StoreResponse } from "../../../../api/useStores";
 import { usePrices, calculateDiscountPercentage } from "../../../../api/usePrices";
@@ -29,6 +30,18 @@ export function ListScreen({ onNavigate }: { onNavigate?: (tab: string) => void 
   const [showAddModal, setShowAddModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const getListActionErrorMessage = useCallback((error: unknown) => {
+    if (error instanceof ApiError) {
+      if (error.status === 428) return "Falta a versao da lista. Recarrega e tenta novamente.";
+      if (error.status === 409) return "A lista foi alterada por outro utilizador. Recarrega e refaz o merge.";
+      return error.message;
+    }
+    if (error instanceof Error) {
+      return error.message;
+    }
+    return "Nao foi possivel atualizar a lista.";
+  }, []);
 
   const loadItems = useCallback(async (id: string) => {
     setIsLoading(true);
@@ -79,47 +92,69 @@ export function ListScreen({ onNavigate }: { onNavigate?: (tab: string) => void 
 
   useEffect(() => { if (listId) loadItems(listId); }, [listId, loadItems]);
 
-  const commitUpdates = useCallback(async (id: string, updated: EnrichedItem[]) => {
+  const commitUpdates = useCallback(async (id: string, version: string, updated: EnrichedItem[]) => {
     const payload: ListItemRequest[] = updated.map(i => ({ productId: i.productId, storeId: i.storeId, quantity: i.quantity, checked: i.checked }));
-    try { await updateList(id, undefined, payload); }
-    catch (e) { console.error(e); }
-  }, [updateList]);
+    try {
+      const updatedList = await updateList(id, version, undefined, payload);
+      setListDetails(updatedList);
+    } catch (e) {
+      console.error(e);
+      window.alert(getListActionErrorMessage(e));
+      if (listId) {
+        await loadItems(listId);
+      }
+    }
+  }, [getListActionErrorMessage, loadItems, listId, updateList]);
 
   const handleEditName = async () => {
     if (!listId || !newName.trim()) return;
     setIsLoading(true);
     try {
-      await updateList(listId, newName.trim(), []);
-      setListDetails(prev => prev ? { ...prev, name: newName.trim() } : null);
+      const currentItems = listDetails?.items ?? [];
+      const updatedList = await updateList(listId, listDetails?.version ?? "", newName.trim(), currentItems.map((item) => ({
+        productId: item.productId,
+        storeId: item.storeId,
+        quantity: item.quantity,
+        checked: item.checked,
+      })));
+      setListDetails(updatedList);
       setEditingName(false); setNewName("");
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+      window.alert(getListActionErrorMessage(e));
+      await loadItems(listId);
+    }
     finally { setIsLoading(false); }
   };
 
   const handleDeleteList = async () => {
     if (!listId) return;
     setIsLoading(true);
-    try { await removeList(listId); navigate("/lists"); }
-    catch (e) { console.error(e); }
+    try { await removeList(listId, listDetails?.version ?? ""); navigate("/lists"); }
+    catch (e) {
+      console.error(e);
+      window.alert(getListActionErrorMessage(e));
+      await loadItems(listId);
+    }
     finally { setIsLoading(false); }
   };
 
   const handleToggleItem = (id: number) => {
     if (!listId) return;
     const next = items.map(i => i.id === id ? { ...i, checked: !i.checked } : i);
-    setItems(next); void commitUpdates(listId, next);
+    setItems(next); void commitUpdates(listId, listDetails?.version ?? "", next);
   };
 
   const handleDeleteItem = (id: number) => {
     if (!listId) return;
     const next = items.filter(i => i.id !== id);
-    setItems(next); void commitUpdates(listId, next);
+    setItems(next); void commitUpdates(listId, listDetails?.version ?? "", next);
   };
 
   const handleChangeQuantity = (id: number, delta: number) => {
     if (!listId) return;
     const next = items.map(i => i.id === id ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i);
-    setItems(next); void commitUpdates(listId, next);
+    setItems(next); void commitUpdates(listId, listDetails?.version ?? "", next);
   };
 
   const handleAddItem = async (addedItem: AddItemPayload) => {
@@ -148,7 +183,7 @@ export function ListScreen({ onNavigate }: { onNavigate?: (tab: string) => void 
       const next = idx >= 0
         ? prev.map((i, j) => j === idx ? { ...i, ...newItem, quantity: i.quantity + Math.max(1, newItem.quantity), checked: false } : i)
         : [...prev, newItem];
-      void commitUpdates(listId, next);
+      void commitUpdates(listId, listDetails?.version ?? "", next);
       return next;
     });
   };

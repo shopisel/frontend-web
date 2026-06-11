@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { Search, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useLists, ListResponse } from "../../../../api/useLists";
+import { ApiError } from "../../../../api/useApi";
 import { useProducts, Product } from "../../../../api/useProducts";
 import { useStores, StoreResponse } from "../../../../api/useStores";
 import { useAccounts } from "../../../../api/useAccounts";
@@ -31,7 +32,7 @@ interface HomeScreenProps {
 
 export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeScreenProps) {
   const navigate = useNavigate();
-  const { getLists, updateList } = useLists();
+  const { getLists, getList, updateList } = useLists();
   const { getProductsByIds, getRelatedProductsByFavoriteIds } = useProducts();
   const { getStores } = useStores();
   const { getMyFavoriteProductIds } = useAccounts();
@@ -50,6 +51,18 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
   const [togglePendingId, setTogglePendingId] = useState<number | null>(null);
   const [addPendingProductId, setAddPendingProductId] = useState<string | null>(null);
 
+  const getListActionErrorMessage = useCallback((error: unknown) => {
+    if (error instanceof ApiError) {
+      if (error.status === 428) return "Falta a versao da lista. Recarrega e tenta novamente.";
+      if (error.status === 409) return "A lista foi alterada por outro utilizador. Recarrega e refaz o merge.";
+      return error.message;
+    }
+    if (error instanceof Error) {
+      return error.message;
+    }
+    return "Nao foi possivel atualizar a lista.";
+  }, []);
+
   const isBusy = isLoadingLatestList || isLoadingFavoriteDeals || togglePendingId !== null || addPendingProductId !== null;
 
   const refreshLatestList = useCallback(async () => {
@@ -66,9 +79,10 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
       setSavings(await calculateListSavings(allItems, getPrices));
 
       const latest = [...lists].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-      setLatestList(latest);
+      const currentList = latest?.id ? await getList(latest.id).catch(() => latest) : latest;
+      setLatestList(currentList ?? null);
 
-      const top = [...(latest.items || [])].sort((a, b) => (a.checked === b.checked ? 0 : a.checked ? 1 : -1)).slice(0, LIST_PREVIEW_ITEMS);
+      const top = [...(currentList?.items || [])].sort((a, b) => (a.checked === b.checked ? 0 : a.checked ? 1 : -1)).slice(0, LIST_PREVIEW_ITEMS);
       if (!top.length) { setMyListItems([]); return; }
 
       const productIds = Array.from(new Set(top.map(i => i.productId)));
@@ -110,7 +124,7 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
     } finally {
       setIsLoadingLatestList(false);
     }
-  }, [getLists, getPrices, getProductsByIds, getStores]);
+  }, [getList, getLists, getPrices, getProductsByIds, getStores]);
 
   useEffect(() => { void refreshLatestList(); }, [refreshLatestList]);
 
@@ -184,8 +198,13 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
     const updatedItems = latestList.items.map(i => i.id === id ? { ...i, checked: !i.checked } : i);
     setLatestList(prev => prev ? { ...prev, items: updatedItems } : null);
     try {
-      await updateList(latestList.id, undefined, updatedItems.map(i => ({ productId: i.productId, storeId: i.storeId, quantity: i.quantity, checked: i.checked })));
-    } catch (e) { console.error(e); }
+      const updatedList = await updateList(latestList.id, latestList.version, undefined, updatedItems.map(i => ({ productId: i.productId, storeId: i.storeId, quantity: i.quantity, checked: i.checked })));
+      setLatestList(updatedList);
+    } catch (e) {
+      console.error(e);
+      window.alert(getListActionErrorMessage(e));
+      await refreshLatestList();
+    }
     finally { setTogglePendingId(null); }
   };
 
@@ -197,9 +216,14 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
       const updatedItems = existing
         ? latestList.items.map(i => i.id === existing.id ? { ...i, quantity: i.quantity + 1 } : i)
         : [...latestList.items, { id: Date.now(), productId: deal.id, storeId: deal.storeId, quantity: 1, checked: false }];
-      await updateList(latestList.id, undefined, updatedItems.map(i => ({ productId: i.productId, storeId: i.storeId, quantity: i.quantity, checked: i.checked })));
+      const updatedList = await updateList(latestList.id, latestList.version, undefined, updatedItems.map(i => ({ productId: i.productId, storeId: i.storeId, quantity: i.quantity, checked: i.checked })));
+      setLatestList(updatedList);
       await refreshLatestList();
-    } catch (error) { console.error(error); }
+    } catch (error) {
+      console.error(error);
+      window.alert(getListActionErrorMessage(error));
+      await refreshLatestList();
+    }
     finally { setAddPendingProductId(null); }
   };
 

@@ -7,6 +7,7 @@ import {
   SheetTitle,
 } from "../../ui/sheet";
 import { useLists, type ListResponse } from "../../../../api/useLists";
+import { ApiError } from "../../../../api/useApi";
 import type { Product } from "../../../../api/useProducts";
 import type { StoreRow } from "./types";
 
@@ -27,6 +28,18 @@ export function AddToListSheet({ product, bestStore, isOpen, onClose }: AddToLis
   const [newListName, setNewListName] = useState("");
   const [creatingNew, setCreatingNew] = useState(false);
   const [showNewListInput, setShowNewListInput] = useState(false);
+
+  const getListActionErrorMessage = (error: unknown) => {
+    if (error instanceof ApiError) {
+      if (error.status === 428) return "Falta a versao da lista. Recarrega e tenta novamente.";
+      if (error.status === 409) return "A lista foi alterada por outro utilizador. Recarrega e refaz o merge.";
+      return error.message;
+    }
+    if (error instanceof Error) {
+      return error.message;
+    }
+    return "Nao foi possivel atualizar a lista.";
+  };
 
   useEffect(() => {
     if (!isOpen) {
@@ -63,6 +76,7 @@ export function AddToListSheet({ product, bestStore, isOpen, onClose }: AddToLis
 
       await updateList(
         list.id,
+        fullList.version,
         undefined,
         updatedItems.map((item) => ({
           productId: item.productId,
@@ -73,6 +87,9 @@ export function AddToListSheet({ product, bestStore, isOpen, onClose }: AddToLis
       );
       setSuccessListId(list.id);
       setTimeout(onClose, 1200);
+    } catch (error) {
+      console.error(error);
+      window.alert(getListActionErrorMessage(error));
     } finally {
       setAddingToListId(null);
     }
@@ -83,11 +100,14 @@ export function AddToListSheet({ product, bestStore, isOpen, onClose }: AddToLis
     setCreatingNew(true);
     try {
       const newList = await createList(newListName.trim());
-      await updateList(newList.id, undefined, [
+      await updateList(newList.id, newList.version, undefined, [
         { productId: product.id, storeId: bestStore.id, quantity: 1, checked: false },
       ]);
       setSuccessListId(newList.id);
       setTimeout(onClose, 1200);
+    } catch (error) {
+      console.error(error);
+      window.alert(getListActionErrorMessage(error));
     } finally {
       setCreatingNew(false);
     }

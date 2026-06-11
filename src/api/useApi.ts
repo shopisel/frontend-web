@@ -3,6 +3,16 @@ import { useCallback } from "react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 export function useApi() {
   const { getAccessToken } = useAuth();
 
@@ -30,7 +40,7 @@ export function useApi() {
       } catch {
         errorData = response.statusText;
       }
-      throw new Error(typeof errorData === "string" ? errorData : errorData?.message || response.statusText);
+      throw new ApiError(response.status, typeof errorData === "string" ? errorData : errorData?.message || response.statusText);
     }
 
     if (response.status === 204) {
@@ -46,9 +56,9 @@ export function useApi() {
 
   const get = useCallback((endpoint: string) => fetchWithAuth(endpoint), [fetchWithAuth]);
   const post = useCallback((endpoint: string, body?: any) => fetchWithAuth(endpoint, { method: "POST", body: JSON.stringify(body) }), [fetchWithAuth]);
-  const put = useCallback((endpoint: string, body?: any) => fetchWithAuth(endpoint, { method: "PUT", body: JSON.stringify(body) }), [fetchWithAuth]);
+  const put = useCallback((endpoint: string, body?: any, headers?: HeadersInit) => fetchWithAuth(endpoint, { method: "PUT", body: JSON.stringify(body), headers }), [fetchWithAuth]);
   const patch = useCallback((endpoint: string, body?: any) => fetchWithAuth(endpoint, { method: "PATCH", body: JSON.stringify(body) }), [fetchWithAuth]);
-  const del = useCallback((endpoint: string) => fetchWithAuth(endpoint, { method: "DELETE" }), [fetchWithAuth]);
+  const del = useCallback((endpoint: string, headers?: HeadersInit) => fetchWithAuth(endpoint, { method: "DELETE", headers }), [fetchWithAuth]);
 
   return { get, post, put, patch, del };
 }

@@ -13,6 +13,7 @@ export interface ListResponse {
   id: string;
   name: string;
   createdAt: string;
+  version: string;
   items: ListItemResponse[];
 }
 
@@ -38,14 +39,14 @@ export function useLists() {
     return await post("/lists", { name, items: [] });
   }, [post]);
 
-  const updateList = useCallback(async (listId: string, name: string | undefined, items: ListItemRequest[]): Promise<ListResponse> => {
+  const updateList = useCallback(async (listId: string, version: string, name: string | undefined, items: ListItemRequest[]): Promise<ListResponse> => {
     const payload: any = { items };
     if (name !== undefined) payload.name = name;
-    return await put(`/lists/${listId}`, payload);
+    return await put(`/lists/${listId}`, payload, { "If-Match": JSON.stringify(version) });
   }, [put]);
 
-  const removeList = useCallback(async (listId: string) => {
-    return await del(`/lists/${listId}`);
+  const removeList = useCallback(async (listId: string, version: string) => {
+    return await del(`/lists/${listId}`, { "If-Match": JSON.stringify(version) });
   }, [del]);
 
   return { getLists, getList, createList, updateList, removeList };
