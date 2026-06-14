@@ -5,6 +5,38 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      brand_name:
+        description: 'Nome da marca (ex: Shopisel)'
+        default: ''
+        required: false
+        type: string
+      brand_tagline:
+        description: 'Tagline principal (ex: Compra melhor, poupa mais)'
+        default: ''
+        required: false
+        type: string
+      brand_sidebar_tagline:
+        description: 'Tagline da sidebar (ex: Compras inteligentes)'
+        default: ''
+        required: false
+        type: string
+      brand_logo_url:
+        description: 'Path do logo na pasta public (ex: /shopisel.png)'
+        default: ''
+        required: false
+        type: string
+      brand_color_primary:
+        description: 'Cor primária hex (ex: #6366F1)'
+        default: ''
+        required: false
+        type: string
+      brand_color_secondary:
+        description: 'Cor secundária hex (ex: #8B5CF6)'
+        default: ''
+        required: false
+        type: string
 
 concurrency:
   group: frontend-main-${{ github.ref }}
@@ -35,7 +67,7 @@ jobs:
             -t shopisel-frontend-ci .
 
       - name: Log in to GitHub Container Registry
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -43,7 +75,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -54,18 +86,24 @@ jobs:
             VITE_KEYCLOAK_URL=${{ vars.VITE_KEYCLOAK_URL }}
             VITE_KEYCLOAK_REALM=${{ vars.VITE_KEYCLOAK_REALM }}
             VITE_KEYCLOAK_CLIENT_ID=${{ vars.VITE_KEYCLOAK_CLIENT_ID }}
+            VITE_BRAND_NAME=${{ github.event.inputs.brand_name || '' }}
+            VITE_BRAND_TAGLINE=${{ github.event.inputs.brand_tagline || '' }}
+            VITE_BRAND_LOGO_URL=${{ github.event.inputs.brand_logo_url || '' }}
+            VITE_BRAND_SIDEBAR_TAGLINE=${{ github.event.inputs.brand_sidebar_tagline || '' }}
+            VITE_BRAND_COLOR_PRIMARY=${{ github.event.inputs.brand_color_primary || '' }}
+            VITE_BRAND_COLOR_SECONDARY=${{ github.event.inputs.brand_color_secondary || '' }}
           tags: |
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
             ${{ env.IMAGE_NAME }}:latest
 
       - name: Set up Flyctl
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: superfly/flyctl-actions/setup-flyctl@master
         with:
           version: 0.3.181
 
       - name: Deploy to Fly.io
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: flyctl deploy --image ${{ env.IMAGE_NAME }}:${{ github.sha }}

@@ -14,7 +14,10 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
   }, [onComplete]);
 
   return (
-    <div className={`flex flex-col items-center justify-center h-full bg-gradient-to-br ${brand.colors.splashGradient} relative overflow-hidden`}>
+    <div
+      className="flex flex-col items-center justify-center h-full relative overflow-hidden"
+      style={{ background: brand.colors.splashGradientCSS }}
+    >
       {/* Background circles */}
       <motion.div
         className="absolute top-[-80px] right-[-80px] w-64 h-64 rounded-full bg-white/10"

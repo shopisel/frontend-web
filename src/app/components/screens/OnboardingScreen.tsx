@@ -3,6 +3,7 @@ import {
   ShoppingCart, ArrowUpDown, Bell, TrendingDown,
   List, Check, Loader2, Tag, Sparkles, MapPin,
 } from "lucide-react";
+import { brand } from "../../../brand.config";
 
 interface OnboardingScreenProps {
   onLogin: () => void;
@@ -221,14 +222,14 @@ function PhoneMockup() {
                 <p style={{ fontSize: 11, fontWeight: 700, color: "#111827" }}>🛒 Lista do Mercado</p>
                 <p style={{ fontSize: 8, color: "#6B7280" }}>3 artigos · 3.97€</p>
               </div>
-              <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#6366F1", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: 24, height: 24, borderRadius: "50%", background: brand.colors.primary, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span style={{ fontSize: 8, color: "white", fontWeight: 700 }}>PT</span>
               </div>
             </div>
 
             {/* Progress bar */}
             <div style={{ height: 3, background: "#F3F4F6", margin: "8px 12px 0" }}>
-              <motion.div style={{ height: "100%", background: "#6366F1", borderRadius: 2 }}
+              <motion.div style={{ height: "100%", background: brand.colors.primary, borderRadius: 2 }}
                 initial={{ width: 0 }} animate={{ width: "33%" }}
                 transition={{ delay: 1.3, duration: 0.8 }} />
             </div>
@@ -264,10 +265,10 @@ function PhoneMockup() {
             <div style={{ margin: "8px 12px 0", background: "#EEF2FF", borderRadius: 12, padding: "8px 10px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  <Tag style={{ width: 9, height: 9, color: "#6366F1" }} />
-                  <span style={{ fontSize: 8, fontWeight: 600, color: "#6366F1" }}>Poupança hoje</span>
+                  <Tag style={{ width: 9, height: 9, color: brand.colors.primary }} />
+                  <span style={{ fontSize: 8, fontWeight: 600, color: brand.colors.primary }}>Poupança hoje</span>
                 </div>
-                <span style={{ fontSize: 13, fontWeight: 800, color: "#6366F1" }}>0.80€</span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: brand.colors.primary }}>0.80€</span>
               </div>
             </div>
 
@@ -307,7 +308,7 @@ function FloatCard({
 // ─── Feature cards ─────────────────────────────────────────────
 const features = [
   {
-    icon: ArrowUpDown, color: "#6366F1", bg: "#EEF2FF",
+    icon: ArrowUpDown, color: brand.colors.primary, bg: brand.colors.primaryLight,
     title: "Compara preços entre lojas",
     desc: "Pesquisa qualquer produto e vê instantaneamente o preço em todas as lojas disponíveis.",
   },
@@ -322,7 +323,7 @@ const features = [
     desc: "Recebe notificações push assim que os teus produtos favoritos baixam de preço.",
   },
   {
-    icon: TrendingDown, color: "#8B5CF6", bg: "#F5F3FF",
+    icon: TrendingDown, color: brand.colors.secondary, bg: "#F5F3FF",
     title: "Poupança visível em cada lista",
     desc: "Vê exatamente quanto poupas com promoções ativas em cada ida ao supermercado.",
   },
@@ -378,7 +379,7 @@ export function OnboardingScreen({ onLogin, onRegister, isLoading = false }: Onb
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
                 filter: "drop-shadow(0 0 48px rgba(165,180,252,0.55))",
               }}>
-              Shopisel
+              {brand.name}
             </h1>
 
             {/* Tagline */}
@@ -427,7 +428,7 @@ export function OnboardingScreen({ onLogin, onRegister, isLoading = false }: Onb
             <div className="flex flex-col sm:flex-row gap-3">
               <button onClick={onRegister} disabled={isLoading}
                 className="flex-1 py-4 rounded-2xl font-bold text-base text-white flex items-center justify-center gap-2 transition-transform active:scale-[0.97] disabled:opacity-70"
-                style={{ background: "linear-gradient(135deg,#6366F1 0%,#8B5CF6 100%)", boxShadow: "0 8px 32px rgba(99,102,241,0.5)" }}>
+                style={{ background: `linear-gradient(135deg,${brand.colors.primary} 0%,${brand.colors.secondary} 100%)`, boxShadow: `0 8px 32px ${brand.colors.activeBorder}` }}>
                 {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Criar conta gratuita"}
               </button>
               <button onClick={onLogin} disabled={isLoading}
@@ -497,7 +498,7 @@ export function OnboardingScreen({ onLogin, onRegister, isLoading = false }: Onb
       <div className="relative z-10 bg-white rounded-t-3xl px-5 pt-6 pb-10">
         <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-6" />
 
-        <h2 className="text-gray-900 text-2xl font-black mb-1">Porquê o Shopisel?</h2>
+        <h2 className="text-gray-900 text-2xl font-black mb-1">Porquê o {brand.name}?</h2>
         <p className="text-gray-400 text-sm mb-5">Tudo o que precisas para comprar mais inteligente.</p>
 
         <div className="flex flex-col gap-3">

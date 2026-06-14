@@ -1,7 +1,9 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* App brand colours */
+  /* App brand colours — these are CSS-only fallbacks.
+     Actual values are injected at runtime by main.tsx from brand.config.ts,
+     which reads VITE_BRAND_* env variables. */
   --brand: #6366F1;
   --brand-light: #EEF2FF;
   --brand-muted: #E0E7FF;
