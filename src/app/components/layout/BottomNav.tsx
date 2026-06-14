@@ -36,7 +36,7 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
               {isActive && (
                 <motion.div
                   layoutId="nav-indicator"
-                  className="absolute -top-1.5 w-8 h-1 rounded-full bg-indigo-600"
+                  className="absolute -top-1.5 w-8 h-1 rounded-full bg-brand"
                   transition={{ type: "spring", damping: 20, stiffness: 300 }}
                 />
               )}
