@@ -15,7 +15,7 @@ interface OnboardingScreenProps {
 function GooglePlayBadge() {
   return (
     <div
-      className="flex items-center gap-3 rounded-2xl px-5 py-3.5 shadow-2xl cursor-pointer active:scale-[0.97] transition-transform"
+      className="flex items-center gap-3 rounded-2xl px-5 py-3.5 shadow-2xl cursor-not-allowed opacity-70"
       style={{
         background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
         border: "1px solid rgba(255,255,255,0.15)",
@@ -53,10 +53,44 @@ function GooglePlayBadge() {
 
       <div>
         <p style={{ fontSize: 10, color: "rgba(255,255,255,0.65)", fontWeight: 500, letterSpacing: 0.3 }}>
-          DISPONÍVEL NO
+          FUTURAMENTE DISPONÍVEL
         </p>
         <p style={{ fontSize: 18, color: "white", fontWeight: 700, lineHeight: 1.1, letterSpacing: -0.3 }}>
           Google Play
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── App Store badge ───────────────────────────────────────────
+function AppStoreBadge() {
+  return (
+    <div
+      className="flex items-center gap-3 rounded-2xl px-5 py-3.5 shadow-2xl cursor-not-allowed opacity-70"
+      style={{
+        background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
+        border: "1px solid rgba(255,255,255,0.15)",
+      }}
+    >
+      {/* Apple logo */}
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <path
+          d="M19.6 14.9c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.2 2.5-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.3 2.6 1.3-.1 1.8-.9 3.4-.9 1.6 0 2 .9 3.4.8 1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9-.1 0-2.7-1-2.7-4z"
+          fill="white"
+        />
+        <path
+          d="M17 6.9c.7-.8 1.1-2 1-3.1-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.4z"
+          fill="white"
+        />
+      </svg>
+
+      <div>
+        <p style={{ fontSize: 10, color: "rgba(255,255,255,0.65)", fontWeight: 500, letterSpacing: 0.3 }}>
+          FUTURAMENTE DISPONÍVEL
+        </p>
+        <p style={{ fontSize: 18, color: "white", fontWeight: 700, lineHeight: 1.1, letterSpacing: -0.3 }}>
+          App Store
         </p>
       </div>
     </div>
@@ -407,12 +441,15 @@ export function OnboardingScreen({ onLogin, onRegister, isLoading = false }: Onb
               })}
             </div>
 
-            {/* Google Play */}
+            {/* App stores */}
             <div className="flex flex-col gap-2">
               <p style={{ fontSize: 12, color: "rgba(199,210,254,0.65)", fontWeight: 500 }}>
-                Descarrega a app para Android
+                Brevemente disponível para Android e iOS
               </p>
-              <GooglePlayBadge />
+              <div className="flex flex-col sm:flex-row gap-3">
+                <GooglePlayBadge />
+                <AppStoreBadge />
+              </div>
             </div>
 
             {/* Divider */}
